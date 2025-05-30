@@ -91,25 +91,7 @@ def generate_hamiltonian(family, num_qubits, include_transverse_field=True, incl
     include_higher_order = params.get('include_higher_order', 0)
 
     # First-order terms
-    if family == 'Ising':
-        J_z = J[:, 2]
-        for i in range(num_qubits - 1):
-            term = [identity] * num_qubits
-            term[i] = sigma_z
-            term[i + 1] = sigma_z
-            H -= J_z[i] * apply_kron(term)
-
-    elif family == 'XY':
-        for i in range(num_qubits - 1):
-            term_x = [identity] * num_qubits
-            term_y = [identity] * num_qubits
-            term_x[i] = sigma_x
-            term_x[i + 1] = sigma_x
-            term_y[i] = sigma_y
-            term_y[i + 1] = sigma_y
-            H -= J[i, 0] * apply_kron(term_x) + J[i, 1] * apply_kron(term_y)
-
-    elif family == 'Heisenberg':
+    if family == 'Heisenberg':
         for i in range(num_qubits - 1):
             term_x = [identity] * num_qubits
             term_y = [identity] * num_qubits
@@ -124,34 +106,11 @@ def generate_hamiltonian(family, num_qubits, include_transverse_field=True, incl
             H -= J[i, 1] * apply_kron(term_y)
             H -= J[i, 2] * apply_kron(term_z)
 
-    # Higher-order terms (second and third order)
-    if include_higher_order >= 2:
-        for i in range(num_qubits - 2):
-            term_x = [identity] * num_qubits
-            term_x[i] = sigma_x
-            term_x[i + 1] = sigma_x
-            term_x[i + 2] = sigma_x
-            H -= 0.1 * apply_kron(term_x)  # Example coefficient for second-order interaction
-
-    if include_higher_order >= 3:
-        for i in range(num_qubits - 3):
-            term_y = [identity] * num_qubits
-            term_y[i] = sigma_y
-            term_y[i + 1] = sigma_y
-            term_y[i + 2] = sigma_y
-            term_y[i + 3] = sigma_y
-            H -= 0.01 * apply_kron(term_y)  # Example coefficient for third-order interaction
-
     # Add transverse field if included
     if include_transverse_field and h is not None:
         for i in range(num_qubits):
             term = [identity] * num_qubits
-            #term[i] = sigma_x 
-                    # For XY model, the transverse field should be along the z-axis.
-            if family == 'XY':
-                term[i] = sigma_z
-            else:
-                term[i] = sigma_x
+            term[i] = sigma_x
             H += h[i] * apply_kron(term)
 
     return H
