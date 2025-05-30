@@ -10,8 +10,6 @@ from tqdm import tqdm
 
 # ────────────────────────────────────────────────────────
 #   **Select which plots to generate**:
-# Comment out the ones you DON’T want.
-# Uncomment the ones you DO want.
 # ────────────────────────────────────────────────────────
 run_plot1 = True      # Sweep perturbations (α=1.0, N=8)
 run_plot2 = False     # Sweep α (perturb=50, N=8)
