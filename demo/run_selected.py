@@ -23,7 +23,10 @@ run_plot3 = False
 # ────────────────────────────────────────────────────────
 
 # Path to your demo script
-DEMO = "demo/learn_hamiltonian.py"
+# Find the directory containing this script (i.e. the demo/ folder)
+DEMOPATH = os.path.dirname(os.path.abspath(__file__))
+# The learn_hamiltonian script lives right next to this in demo/
+DEMO = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
 MEASUREMENTS = 25
@@ -31,7 +34,7 @@ SHOTS        = 1
 STEPS        = 8
 
 # Sweep lists
-PERTURBS = [1, 10, 25, 50, 100, 250, 500]
+PERTURBS = [1, 10, 25]#, 50, 100, 250, 500]
 ALPHAS   = [0.2, 0.5, 0.8, 1.0]
 
 def run(cmd):

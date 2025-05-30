@@ -5,12 +5,17 @@ learn_hamiltonian.py
 Demo: recover Hamiltonians while sweeping arbitrary hyperparameters.
 Any combination of alpha, perturbations, measurements, shots, steps can be provided.
 """
+import os, sys
 
-import os
-import sys
-import json
-import gc
-import argparse
+# __file__ might be "…/demo/learn_hamiltonian.py"
+# DEMO_DIR = directory containing this script, i.e. .../demo/
+DEMO_DIR = os.path.dirname(os.path.abspath(__file__))
+# SRC_DIR = sibling "src" folder under the repo root
+SRC_PATH = os.path.abspath(os.path.join(DEMO_DIR, "..", "src"))
+# Insert *before* any imports of your modules
+sys.path.insert(0, SRC_PATH)
+
+import  json, gc, argparse
 from itertools import product
 from datetime import datetime
 
