@@ -97,8 +97,8 @@ def run_single_run(run_root, params, fixed):
             })
     save_json(ham_list, os.path.join(subdir, "hamiltonians.json"))
 
-    # Loop over each Hamiltonian
-    for info in ham_list:
+    # Loop over each Hamiltonian with its own progress bar
+    for info in tqdm(ham_list, desc="Hamiltonians", leave=False):
         H = generate_hamiltonian(
             family=info["family"],
             num_qubits=fixed["num_qubits"],
@@ -183,7 +183,7 @@ def main():
     # Fixed settings
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hams per family")
-    p.add_argument("--epochs",       type=int, default=1000,help="Training epochs")
+    p.add_argument("--epochs",       type=int, default=500,help="Training epochs")
     p.add_argument("--window",       type=int, default=10,  help="Early-stop window")
     p.add_argument("--tolerance",    type=float,default=1e-4,help="Convergence tol.")
     p.add_argument("--delta-t",      type=float,default=0.1, help="Δt for time steps")
@@ -231,7 +231,7 @@ def main():
         sweep["measurements"], sweep["shots"],
         sweep["steps"]
     ))
-    for (alpha, perturb, meas, shot, step) in tqdm(combos, desc="Total runs"):
+    for (alpha, perturb, meas, shot, step) in tqdm(combos, desc="Inner Sweep (Fig1&2: time stamps; Fig3: spread state ensemble size)"):
         params = {
           "alpha":        alpha,
           "perturb":      perturb,
