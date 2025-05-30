@@ -12,12 +12,12 @@ import os, sys
 DEMO_DIR = os.path.dirname(os.path.abspath(__file__))
 # SRC_DIR = sibling "src" folder under the repo root
 SRC_PATH = os.path.abspath(os.path.join(DEMO_DIR, "..", "src"))
-# Insert *before* any imports of your modules
 sys.path.insert(0, SRC_PATH)
 
-import  json, gc, argparse
+import json, gc, argparse
 from itertools import product
 from datetime import datetime
+from tqdm import tqdm, trange
 
 import numpy as np
 import torch
@@ -41,8 +41,6 @@ def generate_times(alpha, N, delta_t):
     return [0.0] + [delta_t*(k**alpha) for k in range(1, N+1)]
 
 def save_json(obj, path):
-    #with open(path, 'w') as f:
-    #    json.dump(obj, f, indent=4)
     clean = convert_to_serializable(obj)
     with open(path, 'w') as f:
         json.dump(clean, f, indent=4)
@@ -57,28 +55,24 @@ def run_single_run(run_root, params, fixed):
     subdir = os.path.join(run_root, "_".join(name_parts))
     os.makedirs(subdir, exist_ok=True)
 
-    # Save the params for this run
-    #save_json({**params, **fixed}, os.path.join(subdir, "config.json"))
-    
     # Build a JSON-safe run config
     cfg = {
         **params,
-        "num_qubits":         fixed["num_qubits"],
-        "per_family":         fixed["per_family"],
-        "epochs":             fixed["epochs"],
-        "window":             fixed["window"],
-        "tolerance":          fixed["tolerance"],
-        "delta_t":            fixed["delta_t"],
-        "families":           fixed["families"],
-        "coupling_type":      fixed["coupling_type"],
-        "h_field_type":       fixed["h_field_type"],
-        "hidden_layers":      fixed["hidden_layers"],
-        "activation":         fixed["ACTIVATION"].__name__,   # e.g. "Tanh"
-        "nn_seed":            fixed["nn_seed"],
-        "device":             str(fixed["device"]),          # e.g. "cpu" or "cuda:0"
+        "num_qubits":    fixed["num_qubits"],
+        "per_family":    fixed["per_family"],
+        "epochs":        fixed["epochs"],
+        "window":        fixed["window"],
+        "tolerance":     fixed["tolerance"],
+        "delta_t":       fixed["delta_t"],
+        "families":      fixed["families"],
+        "coupling_type": fixed["coupling_type"],
+        "h_field_type":  fixed["h_field_type"],
+        "hidden_layers": fixed["hidden_layers"],
+        "activation":    fixed["ACTIVATION"].__name__,
+        "nn_seed":       fixed["nn_seed"],
+        "device":        str(fixed["device"]),
     }
     save_json(cfg, os.path.join(subdir, "config.json"))
-
 
     # Compute the (fixed) time stamps
     times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
@@ -129,9 +123,11 @@ def run_single_run(run_root, params, fixed):
 
         # Build model+loss+optimizer
         torch.manual_seed(fixed["nn_seed"])
+        d = 2 ** fixed["num_qubits"]
+        tri_len = d * (d + 1) // 2
         predictor = Predictor(
-            input_size=targets.shape[-1],
-            output_size=targets.shape[-1],
+            input_size=tri_len,
+            output_size=tri_len,
             hidden_layers=fixed["hidden_layers"],
             activation_fn=fixed["ACTIVATION"],
             ignore_input=True
@@ -139,9 +135,9 @@ def run_single_run(run_root, params, fixed):
         criterion = Loss(num_qubits=fixed["num_qubits"])
         optimizer = optim.AdamW(predictor.parameters())
 
-        # Training loop
+        # Training loop with progress bar
         loss_hist = []
-        for epoch in range(fixed["epochs"]):
+        for epoch in trange(fixed["epochs"], desc="  Epochs", leave=False):
             total = 0.0
             predictor.train()
             optimizer.zero_grad()
@@ -153,7 +149,6 @@ def run_single_run(run_root, params, fixed):
             optimizer.step()
             avg = total/len(loader)
             loss_hist.append(avg)
-
             # Early stopping
             if epoch >= fixed["window"] + 5:
                 recent = np.mean(loss_hist[-fixed["window"]:])
@@ -230,13 +225,13 @@ def main():
     run_root = os.path.join(args.output_dir, f"run_{ts}")
     os.makedirs(run_root, exist_ok=True)
 
-    # Iterate over every combination
-    for alpha, perturb, meas, shot, step in product(
-            sweep["alphas"], sweep["perturbs"],
-            sweep["measurements"], sweep["shots"],
-            sweep["steps"]
-        ):
-
+    # Iterate over every combination with a progress bar
+    combos = list(product(
+        sweep["alphas"], sweep["perturbs"],
+        sweep["measurements"], sweep["shots"],
+        sweep["steps"]
+    ))
+    for (alpha, perturb, meas, shot, step) in tqdm(combos, desc="Total runs"):
         params = {
           "alpha":        alpha,
           "perturb":      perturb,
