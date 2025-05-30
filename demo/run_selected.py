@@ -4,29 +4,23 @@ run_selected.py
 
 Toggle which data‐generation sweeps to run by commenting/uncommenting.
 """
-
 import os
 import subprocess
+from tqdm import tqdm
 
 # ────────────────────────────────────────────────────────
 #   **Select which plots to generate**:
 # Comment out the ones you DON’T want.
 # Uncomment the ones you DO want.
 # ────────────────────────────────────────────────────────
-# run_plot1 = True    # Sweep perturbations (α=1.0, N=8)
-run_plot1 = True
-
-run_plot2 = False    # Sweep α (perturb=50, N=8)
-
-# run_plot3 = True  # Nested: for each perturb, sweep α (N=8)
-run_plot3 = False
+run_plot1 = True      # Sweep perturbations (α=1.0, N=8)
+run_plot2 = False     # Sweep α (perturb=50, N=8)
+run_plot3 = False     # Nested: for each perturb, sweep α (N=8)
 # ────────────────────────────────────────────────────────
 
 # Path to your demo script
-# Find the directory containing this script (i.e. the demo/ folder)
 DEMOPATH = os.path.dirname(os.path.abspath(__file__))
-# The learn_hamiltonian script lives right next to this in demo/
-DEMO = os.path.join(DEMOPATH, "learn_hamiltonian.py")
+DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
 MEASUREMENTS = 25
@@ -34,55 +28,61 @@ SHOTS        = 1
 STEPS        = 8
 
 # Sweep lists
-PERTURBS = [1, 10, 25]#, 50, 100, 250, 500]
-ALPHAS   = [0.2, 0.5, 0.8, 1.0]
+PERTURBS = [1, 10, 25, 50, 100, 250, 500]
+ALPHAS   = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 def run(cmd):
     print(">>>", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
 def sweep_plot1(output_root):
-    for pert in PERTURBS:
+    """Sweep over perturbations for Plot 1."""
+    step_list = ",".join(str(i) for i in range(1, STEPS+1))
+    for pert in tqdm(PERTURBS, desc="Figure 1 Data: Recovery Error Scaling against total Experiment Time with increasing Spread State Ensemble"):
         outdir = os.path.join(output_root, f"plot1_perturb_{pert}")
         os.makedirs(outdir, exist_ok=True)
         run([
             "python", DEMO,
-            "--alphas",       "1.0",
-            "--perturbs",     str(pert),
+            "--alphas",       "1.0",                # fixed alpha
+            "--perturbs",     str(pert),            # sweep this spread state ensemble size
             "--measurements", str(MEASUREMENTS),
             "--shots",        str(SHOTS),
-            "--steps",        str(STEPS),
+            "--steps",        step_list,            # sweep steps internally
             "--output-dir",   outdir
         ])
 
 def sweep_plot2(output_root):
-    for alpha in ALPHAS:
+    """Sweep over alphas for Plot 2."""
+    step_list = ",".join(str(i) for i in range(1, STEPS+1))
+    for alpha in tqdm(ALPHAS, desc="Figure 2 Data: Recovery Error Scaling against total Experiment Time with increasing Alpha Value"):
         outdir = os.path.join(output_root, f"plot2_alpha_{alpha}")
         os.makedirs(outdir, exist_ok=True)
         run([
             "python", DEMO,
-            "--alphas",       str(alpha),
-            "--perturbs",     "50",
+            "--alphas",       str(alpha),           # sweep this
+            "--perturbs",     "50",                 # fixed spread state ensemble size
             "--measurements", str(MEASUREMENTS),
             "--shots",        str(SHOTS),
-            "--steps",        str(STEPS),
+            "--steps",        step_list,            # sweep steps internally
+            "--output-dir",   outdir
+        ])
+        
+def sweep_plot3(output_root):
+    """Sweep over alphas for Plot 3."""
+    perturb_list = ",".join(str(p) for p in PERTURBS)
+    for alpha in tqdm(ALPHAS, desc="Figure 3 Data: Recovery Error Scaling against Spread Ensemble Size with increasing Alpha Value"):
+        outdir = os.path.join(output_root, f"plot2_alpha_{alpha}")
+        os.makedirs(outdir, exist_ok=True)
+        run([
+            "python", DEMO,
+            "--alphas",       str(alpha),           # sweep this
+            "--perturbs",     perturb_list,         # sweep steps internally
+            "--measurements", str(MEASUREMENTS),
+            "--shots",        str(SHOTS),
+            "--steps",        str(STEPS),            # fixed time stamps
             "--output-dir",   outdir
         ])
 
-def sweep_plot3(output_root):
-    for pert in PERTURBS:
-        outdir = os.path.join(output_root, f"plot3_perturb_{pert}")
-        os.makedirs(outdir, exist_ok=True)
-        alpha_list = ",".join(str(a) for a in ALPHAS)
-        run([
-            "python", DEMO,
-            "--alphas",       alpha_list,
-            "--perturbs",     str(pert),
-            "--measurements", str(MEASUREMENTS),
-            "--shots",        str(SHOTS),
-            "--steps",        str(STEPS),
-            "--output-dir",   outdir
-        ])
 
 def main():
     root = "outputs"
