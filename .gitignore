@@ -10,5 +10,6 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data (if you don’t want raw data in Git)
+# Data (if you donï¿½t want raw data in Git)
 data/
+outputs/
