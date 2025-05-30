@@ -41,8 +41,11 @@ def generate_times(alpha, N, delta_t):
     return [0.0] + [delta_t*(k**alpha) for k in range(1, N+1)]
 
 def save_json(obj, path):
+    #with open(path, 'w') as f:
+    #    json.dump(obj, f, indent=4)
+    clean = convert_to_serializable(obj)
     with open(path, 'w') as f:
-        json.dump(obj, f, indent=4)
+        json.dump(clean, f, indent=4)
 
 def run_single_run(run_root, params, fixed):
     """
@@ -55,7 +58,27 @@ def run_single_run(run_root, params, fixed):
     os.makedirs(subdir, exist_ok=True)
 
     # Save the params for this run
-    save_json({**params, **fixed}, os.path.join(subdir, "config.json"))
+    #save_json({**params, **fixed}, os.path.join(subdir, "config.json"))
+    
+    # Build a JSON-safe run config
+    cfg = {
+        **params,
+        "num_qubits":         fixed["num_qubits"],
+        "per_family":         fixed["per_family"],
+        "epochs":             fixed["epochs"],
+        "window":             fixed["window"],
+        "tolerance":          fixed["tolerance"],
+        "delta_t":            fixed["delta_t"],
+        "families":           fixed["families"],
+        "coupling_type":      fixed["coupling_type"],
+        "h_field_type":       fixed["h_field_type"],
+        "hidden_layers":      fixed["hidden_layers"],
+        "activation":         fixed["ACTIVATION"].__name__,   # e.g. "Tanh"
+        "nn_seed":            fixed["nn_seed"],
+        "device":             str(fixed["device"]),          # e.g. "cpu" or "cuda:0"
+    }
+    save_json(cfg, os.path.join(subdir, "config.json"))
+
 
     # Compute the (fixed) time stamps
     times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
