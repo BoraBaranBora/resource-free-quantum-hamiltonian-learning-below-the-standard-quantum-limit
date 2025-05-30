@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual envs
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (if you don’t want raw data in Git)
+data/
