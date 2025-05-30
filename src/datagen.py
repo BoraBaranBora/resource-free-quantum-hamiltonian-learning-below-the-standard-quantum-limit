@@ -159,7 +159,7 @@ class DataGen(Dataset):
         targets_tensor = torch.tensor(targets_list, dtype=torch.long)  # Targets are the indices of measurement outcomes
         initial_states_tensor = torch.stack(initial_states_list)
         
-        print(f'initial_states_tensor shape: {initial_states_tensor.size()}')
+        #print(f'initial_states_tensor shape: {initial_states_tensor.size()}')
 
         return targets_tensor, times_tensor, basis_tensor, initial_states_tensor
 
