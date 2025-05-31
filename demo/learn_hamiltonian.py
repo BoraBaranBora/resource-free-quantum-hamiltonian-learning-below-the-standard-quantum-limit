@@ -157,9 +157,18 @@ def run_single_run(run_root, params, fixed):
                     break
 
         # Save outputs
-        base = os.path.join(subdir, info["name"])
-        torch.save(predictor.state_dict(), base + ".pth")
-        save_json({"loss_history": loss_hist}, base + "_loss.json")
+        #base = os.path.join(subdir, info["name"])
+        #torch.save(predictor.state_dict(), base + ".pth")
+        #save_json({"loss_history": loss_hist}, base + "_loss.json")
+        
+        # Save outputs under “embedding_<codename>.pth” and “embedding_<codename>_loss.json”
+        codename = info["name"]  # e.g. "hamiltonian_heisenberg_000_a8c99b86"
+        model_filename = f"embedding_{codename}.pth"
+        loss_filename  = f"embedding_{codename}_loss.json"
+
+        torch.save(predictor.state_dict(), os.path.join(subdir, model_filename))
+        save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
+
 
         # Cleanup
         del ds, predictor, xb, tb, bb, ib
