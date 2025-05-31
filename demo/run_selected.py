@@ -33,11 +33,11 @@ def run(cmd):
     print(">>>", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
-def sweep_plot1(output_root):
-    """Sweep over perturbations for Plot 1."""
+def reproduce_data_figure1(output_root):
+    """Sweep over parameter combinations for Figure 1."""
     step_list = ",".join(str(i) for i in range(1, STEPS+1))
     for pert in tqdm(PERTURBS, desc="Figure 1 Data: Recovery Error Scaling against total Experiment Time with increasing Spread State Ensemble"):
-        outdir = os.path.join(output_root, f"plot1_perturb_{pert}")
+        outdir = os.path.join(output_root, f"figure1_perturb_{pert}")
         os.makedirs(outdir, exist_ok=True)
         run([
             "python", DEMO,
@@ -49,11 +49,11 @@ def sweep_plot1(output_root):
             "--output-dir",   outdir
         ])
 
-def sweep_plot2(output_root):
-    """Sweep over alphas for Plot 2."""
+def reproduce_data_figure2(output_root):
+    """Sweep over parameter combinations for Figure 2."""
     step_list = ",".join(str(i) for i in range(1, STEPS+1))
     for alpha in tqdm(ALPHAS, desc="Figure 2 Data: Recovery Error Scaling against total Experiment Time with increasing Alpha Value"):
-        outdir = os.path.join(output_root, f"plot2_alpha_{alpha}")
+        outdir = os.path.join(output_root, f"figure2_alpha_{alpha}")
         os.makedirs(outdir, exist_ok=True)
         run([
             "python", DEMO,
@@ -65,11 +65,11 @@ def sweep_plot2(output_root):
             "--output-dir",   outdir
         ])
         
-def sweep_plot3(output_root):
-    """Sweep over alphas for Plot 3."""
+def reproduce_data_figure3(output_root):
+    """Sweep over parameter combinations for Figure 3."""
     perturb_list = ",".join(str(p) for p in PERTURBS)
     for alpha in tqdm(ALPHAS, desc="Figure 3 Data: Recovery Error Scaling against Spread Ensemble Size with increasing Alpha Value"):
-        outdir = os.path.join(output_root, f"plot2_alpha_{alpha}")
+        outdir = os.path.join(output_root, f"figure3_alpha_{alpha}")
         os.makedirs(outdir, exist_ok=True)
         run([
             "python", DEMO,
@@ -85,11 +85,11 @@ def sweep_plot3(output_root):
 def main():
     root = "outputs"
     if run_plot1:
-        sweep_plot1(os.path.join(root, "plot1"))
+        reproduce_data_figure1(os.path.join(root, "plot1"))
     if run_plot2:
-        sweep_plot2(os.path.join(root, "plot2"))
+        reproduce_data_figure2(os.path.join(root, "plot2"))
     if run_plot3:
-        sweep_plot3(os.path.join(root, "plot3"))
+        reproduce_data_figure3(os.path.join(root, "plot3"))
 
     print("Selected sweeps complete. Check the “outputs/” folder.")
 
