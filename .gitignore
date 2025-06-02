@@ -13,3 +13,16 @@ env/
 # Data (if you don�t want raw data in Git)
 data/
 outputs/
+original_data_figure1/restructured_run_directory_figure1/
+original_data_figure1/run_directory/
+original_data_backup/
+
+original_data_figure2/restructured_run_directory_figure2/
+original_data_figure2/run_directory/
+original_data_figure3/restructured_run_directory_figure3/
+original_data_figure3/run_directory/
+
+composite_plotting/restructured_run_directory_figure1/
+composite_plotting/restructured_run_directory_figure2/
+composite_plotting/restructured_run_directory_figure3/
+
