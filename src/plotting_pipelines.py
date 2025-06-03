@@ -2,16 +2,13 @@
 """
 plotting_pipelines.py
 
-Contains:
-  • run_figure1_pipeline(base1)
-  • run_time_scaling_pipeline(base_time)
-  • run_time_outer_pipeline(base_time)
-  • run_perturb_scaling_pipeline(base_pert)
-  • run_perturb_outer_pipeline(base_pert)
-  • run_derivative_pipeline(time_res, pert_res)
+Each “sweep” pipeline now takes an explicit `cache_dir` (instead of inferring
+it from __file__).  That way, whatever folder your composite script lives in
+can choose exactly which “cached_errors/” to use.
 """
 
 import os
+import pickle
 import numpy as np
 
 from extraction_and_evalution import (
@@ -28,35 +25,50 @@ from plotting_utils import (
 )
 
 
-def run_figure1_pipeline(base1: str):
+def run_sweep1_pipeline(base1: str, cache_dir: str):
     """
-    Figure 1 (Time‐scaling grouped by perturbation):
-      – scaling_param='times', group_by='perturb'
-      – expects folders under base1/
+    Sweep 1 (time‐scaling by perturb).  Expects
+      base1
+    to point to first_parameter_sweep_data/.  It will look for
+      {cache_dir}/sweep1_errors.pkl
+    first, and only if missing will it recompute.
     """
-    print("\n=== Running Figure 1 Pipeline ===")
-    run_dirs1 = sorted(os.listdir(base1))
-    run_dirs1 = [os.path.join(base1, d) for d in run_dirs1 if d.startswith("run_")]
+    print("\n=== Running Sweep 1 Pipeline ===")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
 
-    combined_errors = {}
-    for run_dir in run_dirs1:
-        if not os.path.isdir(run_dir):
-            print(f"  [WARN] Skipping {run_dir}: not found")
-            continue
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; collecting errors from raw embeddings…")
+        run_dirs1 = sorted(d for d in os.listdir(base1) if d.startswith("run_"))
+        combined_errors = {}
 
-        errs = collect_recovery_errors_from_data(
-            run_dir,
-            scaling_param='times',
-            group_by='perturb'
-        )
-        for time_tuple, triplets in errs.items():
-            combined_errors.setdefault(time_tuple, []).extend(triplets)
+        for d in run_dirs1:
+            run_dir = os.path.join(base1, d)
+            if not os.path.isdir(run_dir):
+                print(f"  [WARN] Skipping {run_dir}: not found")
+                continue
 
-    if not combined_errors:
-        print("  No data found for Figure 1. Skipping.\n")
-        return
+            errs = collect_recovery_errors_from_data(
+                run_dir,
+                scaling_param="times",
+                group_by="perturb"
+            )
+            for time_tuple, triplets in errs.items():
+                combined_errors.setdefault(time_tuple, []).extend(triplets)
 
-    # 1) Plot Error vs ∑(time‐stamps), colored/fitted by perturbation
+        if not combined_errors:
+            print("  No data found for Sweep 1. Skipping.\n")
+            return
+
+        with open(cache_path, "wb") as f:
+            pickle.dump(combined_errors, f)
+        print(f"  → Wrote out {len(combined_errors)} keys to {cache_path}")
+
+    # 1) Error vs ∑(time), colored/fitted by perturb
     plot_errors_by_perturbation(
         combined_errors,
         include_families=None,
@@ -64,10 +76,10 @@ def run_figure1_pipeline(base1: str):
         label_prefix="P"
     )
 
-    # 2) Compute β vs perturbation and plot (error‐bar)
+    # 2) Compute β vs perturb and plot
     keys, betas, beta_errs = compute_betas_from_errors(
         combined_errors,
-        scaling_param='times',
+        scaling_param="times",
         include_families=None,
         exclude_x_scale=None
     )
@@ -78,42 +90,55 @@ def run_figure1_pipeline(base1: str):
         label_prefix="P"
     )
 
-    print("=== Finished Figure 1 Pipeline ===\n")
+    print("=== Finished Sweep 1 Pipeline ===\n")
 
 
-def run_time_scaling_pipeline(base_time: str):
+def run_sweep2_pipeline(base_time: str, cache_dir: str):
     """
-    Figure 2 (Time‐scaling grouped by α):
-      – scaling_param='times', group_by='alpha'
-      – expects folders under base_time/
-    Returns:
-      (alphas_time, betas_time) or None if no data.
+    Sweep 2 (time‐scaling by alpha).  Expects
+      base_time
+    to point to second_parameter_sweep_data/.  It will look for
+      {cache_dir}/sweep2_errors.pkl first.
     """
-    print("\n=== Running Figure 2 (Time‐Scaling) Pipeline ===")
-    dirs = sorted(os.listdir(base_time))
-    run_dirs_time = [os.path.join(base_time, d) for d in dirs if d.startswith("run_")]
+    print("\n=== Running Sweep 2 Pipeline ===")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, "sweep2_errors.pkl")
 
-    combined_errors = {}
-    for run_dir in run_dirs_time:
-        if not os.path.isdir(run_dir):
-            print(f"  [WARN] Skipping {run_dir}: not found")
-            continue
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; collecting errors from raw embeddings…")
+        run_dirs_time = sorted(d for d in os.listdir(base_time) if d.startswith("run_"))
+        combined_errors = {}
 
-        errs = collect_recovery_errors_from_data(
-            run_dir,
-            scaling_param='times',
-            group_by='alpha'
-        )
-        for time_tuple, triplets in errs.items():
-            combined_errors.setdefault(time_tuple, []).extend(triplets)
+        for d in run_dirs_time:
+            run_dir = os.path.join(base_time, d)
+            if not os.path.isdir(run_dir):
+                print(f"  [WARN] Skipping {run_dir}: not found")
+                continue
 
-    if not combined_errors:
-        print("  No time‐scaling data found; skipping.\n")
-        return None
+            errs = collect_recovery_errors_from_data(
+                run_dir,
+                scaling_param="times",
+                group_by="alpha"
+            )
+            for time_tuple, triplets in errs.items():
+                combined_errors.setdefault(time_tuple, []).extend(triplets)
 
+        if not combined_errors:
+            print("  No Sweep 2 data found; skipping.\n")
+            return None
+
+        with open(cache_path, "wb") as f:
+            pickle.dump(combined_errors, f)
+        print(f"  → Wrote out {len(combined_errors)} keys to {cache_path}")
+
+    # Fit β(α)
     alphas_time, betas_time, beta_errs_time = compute_betas_from_errors(
         combined_errors,
-        scaling_param='times',
+        scaling_param="times",
         include_families=None,
         exclude_x_scale=None
     )
@@ -125,36 +150,24 @@ def run_time_scaling_pipeline(base_time: str):
         beta_errs=beta_errs_time
     )
 
-    print("=== Finished Figure 2 (Time‐Scaling) Pipeline ===\n")
+    print("=== Finished Sweep 2 Pipeline ===\n")
     return alphas_time, betas_time
 
 
-def run_time_outer_pipeline(base_time: str):
+def run_sweep2_outer(base_time: str, cache_dir: str):
     """
-    Separately: pick one α and plot “Error vs ∑(time‐stamps)” for that α.
-      – Uses the same combined_errors_by_time logic as run_time_scaling_pipeline.
-      – Expects folders under base_time/.
+    Sweep 2 Outer: pick one α (largest) and plot Error vs ∑(time).
+    Expects cached errors under {cache_dir}/sweep2_errors.pkl.
     """
-    print("\n=== Running Time‐Outer Pipeline (Error vs ∑(time) for one α) ===")
-    dirs = sorted(os.listdir(base_time))
-    run_dirs_time = [os.path.join(base_time, d) for d in dirs if d.startswith("run_")]
+    print("\n=== Running Sweep 2 Outer (Error vs ∑(time) for one α) ===")
+    cache_path = os.path.join(cache_dir, "sweep2_errors.pkl")
 
-    combined_errors = {}
-    for run_dir in run_dirs_time:
-        if not os.path.isdir(run_dir):
-            print(f"  [WARN] Skipping {run_dir}: not found")
-            continue
-
-        errs = collect_recovery_errors_from_data(
-            run_dir,
-            scaling_param='times',
-            group_by='alpha'
-        )
-        for time_tuple, triplets in errs.items():
-            combined_errors.setdefault(time_tuple, []).extend(triplets)
-
-    if not combined_errors:
-        print("  No data found for Time‐Outer. Skipping.\n")
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; cannot run Sweep 2 Outer.")
         return
 
     unique_alphas = sorted({
@@ -162,54 +175,66 @@ def run_time_outer_pipeline(base_time: str):
         for triplets in combined_errors.values()
         for triplet in triplets
     })
-    print("  Available α (time‐outer):", unique_alphas)
+    print("  Available α (Sweep 2 Outer):", unique_alphas)
     alpha_value = unique_alphas[-1]
 
     plot_errors_for_outer(
         errors_by_scaling=combined_errors,
-        scaling_param='times',
-        group_by='alpha',
+        scaling_param="times",
+        group_by="alpha",
         outer_value=alpha_value,
         include_families=None,
         exclude_x_scale=None,
         show_theory=True
     )
-    print("=== Finished Time‐Outer Pipeline ===\n")
+    print("=== Finished Sweep 2 Outer ===\n")
 
 
-def run_perturb_scaling_pipeline(base_pert: str):
+def run_sweep3_pipeline(base_pert: str, cache_dir: str):
     """
-    Figure 3 (Perturb‐scaling grouped by α):
-      – scaling_param='perturb', group_by='alpha'
-      – expects folders under base_pert/
-    Returns:
-      (alphas_pert, betas_pert) or None if no data.
+    Sweep 3 (perturb‐scaling by alpha).  Expects
+      base_pert
+    to point to third_parameter_sweep_data/.  It will look for
+      {cache_dir}/sweep3_errors.pkl first.
     """
-    print("\n=== Running Figure 3 (Perturb‐Scaling) Pipeline ===")
-    dirs = sorted(os.listdir(base_pert))
-    run_dirs_pert = [os.path.join(base_pert, d) for d in dirs if d.startswith("run_")]
+    print("\n=== Running Sweep 3 Pipeline ===")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, "sweep3_errors.pkl")
 
-    combined_errors = {}
-    for run_dir in run_dirs_pert:
-        if not os.path.isdir(run_dir):
-            print(f"  [WARN] Skipping {run_dir}: not found")
-            continue
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; collecting errors from raw embeddings…")
+        run_dirs_pert = sorted(d for d in os.listdir(base_pert) if d.startswith("run_"))
+        combined_errors = {}
 
-        errs = collect_recovery_errors_from_data(
-            run_dir,
-            scaling_param='perturb',
-            group_by='alpha'
-        )
-        for perturb_tuple, triplets in errs.items():
-            combined_errors.setdefault(perturb_tuple, []).extend(triplets)
+        for d in run_dirs_pert:
+            run_dir = os.path.join(base_pert, d)
+            if not os.path.isdir(run_dir):
+                print(f"  [WARN] Skipping {run_dir}: not found")
+                continue
 
-    if not combined_errors:
-        print("  No perturb‐scaling data found; skipping.\n")
-        return None
+            errs = collect_recovery_errors_from_data(
+                run_dir,
+                scaling_param="perturb",
+                group_by="alpha"
+            )
+            for perturb_tuple, triplets in errs.items():
+                combined_errors.setdefault(perturb_tuple, []).extend(triplets)
+
+        if not combined_errors:
+            print("  No Sweep 3 data found; skipping.\n")
+            return None
+
+        with open(cache_path, "wb") as f:
+            pickle.dump(combined_errors, f)
+        print(f"  → Wrote out {len(combined_errors)} keys to {cache_path}")
 
     alphas_pert, betas_pert, beta_errs_pert = compute_betas_from_errors(
         combined_errors,
-        scaling_param='perturb',
+        scaling_param="perturb",
         include_families=None,
         exclude_x_scale=None
     )
@@ -221,36 +246,24 @@ def run_perturb_scaling_pipeline(base_pert: str):
         beta_errs=beta_errs_pert
     )
 
-    print("=== Finished Figure 3 (Perturb‐Scaling) Pipeline ===\n")
+    print("=== Finished Sweep 3 Pipeline ===\n")
     return alphas_pert, betas_pert
 
 
-def run_perturb_outer_pipeline(base_pert: str):
+def run_sweep3_outer(base_pert: str, cache_dir: str):
     """
-    Separately: pick one α and plot “Error vs ∑(perturbation)” for that α.
-      – Uses the same combined_errors_by_perturb logic as run_perturb_scaling_pipeline.
-      – Expects folders under base_pert/.
+    Sweep 3 Outer: pick one α (largest) and plot Error vs ∑(perturb).
+    Expects cached errors under {cache_dir}/sweep3_errors.pkl.
     """
-    print("\n=== Running Perturb‐Outer Pipeline (Error vs ∑(perturb) for one α) ===")
-    dirs = sorted(os.listdir(base_pert))
-    run_dirs_pert = [os.path.join(base_pert, d) for d in dirs if d.startswith("run_")]
+    print("\n=== Running Sweep 3 Outer (Error vs ∑(perturb) for one α) ===")
+    cache_path = os.path.join(cache_dir, "sweep3_errors.pkl")
 
-    combined_errors = {}
-    for run_dir in run_dirs_pert:
-        if not os.path.isdir(run_dir):
-            print(f"  [WARN] Skipping {run_dir}: not found")
-            continue
-
-        errs = collect_recovery_errors_from_data(
-            run_dir,
-            scaling_param='perturb',
-            group_by='alpha'
-        )
-        for perturb_tuple, triplets in errs.items():
-            combined_errors.setdefault(perturb_tuple, []).extend(triplets)
-
-    if not combined_errors:
-        print("  No data found for Perturb‐Outer. Skipping.\n")
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; cannot run Sweep 3 Outer.")
         return
 
     unique_alphas = sorted({
@@ -258,25 +271,22 @@ def run_perturb_outer_pipeline(base_pert: str):
         for triplets in combined_errors.values()
         for triplet in triplets
     })
-    print("  Available α (perturb‐outer):", unique_alphas)
+    print("  Available α (Sweep 3 Outer):", unique_alphas)
     alpha_value = unique_alphas[-1]
 
     plot_errors_for_outer(
         errors_by_scaling=combined_errors,
-        scaling_param='perturb',
-        group_by='alpha',
+        scaling_param="perturb",
+        group_by="alpha",
         outer_value=alpha_value,
         include_families=None,
         exclude_x_scale=None,
         show_theory=True
     )
-    print("=== Finished Perturb‐Outer Pipeline ===\n")
+    print("=== Finished Sweep 3 Outer ===\n")
 
 
-def run_derivative_pipeline(
-    time_res: tuple,
-    pert_res: tuple
-):
+def run_derivative_pipeline(time_res: tuple, pert_res: tuple):
     """
     If both time_res and pert_res are not None, extract (alphas_time, betas_time)
     and (alphas_pert, betas_pert), find their common α values, and call plot_dbetadalpha.
@@ -306,5 +316,3 @@ def run_derivative_pipeline(
         betas_time=bt_common,
         betas_perturb=bp_common
     )
-
-
