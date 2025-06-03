@@ -135,15 +135,14 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
 - **Purpose**  
   Generate the final composite figures after completing all three parameter sweeps. These plots summarize error and β‐scaling relationships across time and perturbation dimensions.
 
-- **How It Works**  
-  1. Copy or symlink `composite_replotting.py` from `replot_original_data/` into this directory (or adjust paths accordingly).  
-  2. Run:
+- **How It Works**    
+  1. Run:
      ```bash
      python composite_replotting.py
      ```  
-  3. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
+  2. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
      - **Figure 1**: “Error vs ∑time” (colored/fitted by perturbation) and “β vs perturbation”  
      - **Figure 2**: “β vs α” (standard & theory+fit) and “Error vs ∑time” for one representative α  
      - **Figure 3**: “β vs α” (standard & theory+fit) and “Error vs ∑perturb” for one representative α  
      - **Derivative‐comparison**: dβ/dα vs α (time‐ vs perturb‐scaling)  
-  4. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).
+  3. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).
