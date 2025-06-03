@@ -45,47 +45,6 @@ reproduce_original_data/
 
 ---
 
-### Usage
-
-```bash
-cd reproduce_original_data
-# Edit rerun_selected_sweeps.py to set run_sweep1/2/3 as desired
-python rerun_selected_sweeps.py
-```
-
-After completion, you should see three top‐level folders:
-
-reproduce_original_data/
-├─ first_parameter_sweep_data/
-│   ├─ run_SWEEP1_perturb_1/
-│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_1/
-│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_2/
-│   │   └─ … (up to steps=8)
-│   ├─ run_SWEEP1_perturb_10/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP1_perturb_<p> per perturbation)
-│
-├─ second_parameter_sweep_data/
-│   ├─ run_SWEEP2_alpha_0.3/
-│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_1/
-│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_2/
-│   │   └─ … (up to steps=8)
-│   ├─ run_SWEEP2_alpha_0.4/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP2_alpha_<α> per α)
-│
-├─ third_parameter_sweep_data/
-│   ├─ run_SWEEP3_alpha_0.3/
-│   │   ├─ alpha_0.300_perturb_1_measurements_25_shots_1_steps_8/
-│   │   ├─ alpha_0.300_perturb_10_measurements_25_shots_1_steps_8/
-│   │   └─ … (all perturb values at steps=8)
-│   ├─ run_SWEEP3_alpha_0.4/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP3_alpha_<α> per α)
-└─ rerun_selected_sweeps.py
-
-
-
 ## Scripts Overview
 
 ### 1. `rerun_selected_sweeps.py`
@@ -147,6 +106,38 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
 - `embedding_<codename>.pth`
 - `embedding_<codename>_loss.json`
 - …etc.
+
+After completion, you should see three top‐level folders:
+
+reproduce_original_data/
+├─ first_parameter_sweep_data/
+│   ├─ run_SWEEP1_perturb_1/
+│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_1/
+│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_2/
+│   │   └─ … (up to steps=8)
+│   ├─ run_SWEEP1_perturb_10/
+│   │   └─ … (same structure)
+│   └─ … (one run_SWEEP1_perturb_<p> per perturbation)
+│
+├─ second_parameter_sweep_data/
+│   ├─ run_SWEEP2_alpha_0.3/
+│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_1/
+│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_2/
+│   │   └─ … (up to steps=8)
+│   ├─ run_SWEEP2_alpha_0.4/
+│   │   └─ … (same structure)
+│   └─ … (one run_SWEEP2_alpha_<α> per α)
+│
+├─ third_parameter_sweep_data/
+│   ├─ run_SWEEP3_alpha_0.3/
+│   │   ├─ alpha_0.300_perturb_1_measurements_25_shots_1_steps_8/
+│   │   ├─ alpha_0.300_perturb_10_measurements_25_shots_1_steps_8/
+│   │   └─ … (all perturb values at steps=8)
+│   ├─ run_SWEEP3_alpha_0.4/
+│   │   └─ … (same structure)
+│   └─ … (one run_SWEEP3_alpha_<α> per α)
+└─ rerun_selected_sweeps.py
+
 
 ---
 
