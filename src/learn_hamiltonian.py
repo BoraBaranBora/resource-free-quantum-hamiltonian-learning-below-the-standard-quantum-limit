@@ -36,7 +36,7 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     return int((avail_mb//per_batch)*0.95//50*50)
 
 def generate_times(alpha, N, delta_t):
-    return [0.0] + [delta_t*(k**alpha) for k in range(1, N+1)]
+    return  [delta_t*(k**alpha) for k in range(1, N+1)]
 
 def save_json(obj, path):
     clean = convert_to_serializable(obj)
@@ -190,7 +190,7 @@ def main():
     # Fixed settings
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hams per family")
-    p.add_argument("--epochs",       type=int, default=500,help="Training epochs")
+    p.add_argument("--epochs",       type=int, default=1000,help="Training epochs")
     p.add_argument("--window",       type=int, default=10,  help="Early-stop window")
     p.add_argument("--tolerance",    type=float,default=1e-4,help="Convergence tol.")
     p.add_argument("--delta-t",      type=float,default=0.1, help="Δt for time steps")
@@ -238,7 +238,7 @@ def main():
         sweep["measurements"], sweep["shots"],
         sweep["steps"]
     ))
-    for (alpha, spreading, meas, shot, step) in tqdm(combos, desc="Inner Sweep (Fig1&2: time stamps; Fig3: spread state ensemble size)"):
+    for (alpha, spreading, meas, shot, step) in tqdm(combos, desc="Scaling Sweep"):
         params = {
           "alpha":        alpha,
           "spreading":      spreading,
@@ -252,3 +252,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -44,15 +44,15 @@ def reproduce_data_SWEEP1(base_folder: str):
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS + 1))
 
-    for pert in tqdm(SPREADINGS, desc="SWEEP 1 Data (measurements=50)"):
-        run_dir_name = f"run_SWEEP1_spreading_{pert}"
+    for spread in tqdm(SPREADINGS, desc="SWEEP 1 Data (measurements=50)"):
+        run_dir_name = f"run_SWEEP1_spreading_{spread}"
         outdir = os.path.join(base_folder, run_dir_name)
         os.makedirs(outdir, exist_ok=True)
 
         run([
             "python", DEMO,
             "--alphas",       "1.0",                      # fixed α
-            "--spreadings",     str(pert),                  # sweep this spreadings
+            "--spreadings",     str(spread),                  # sweep this spreadings
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8

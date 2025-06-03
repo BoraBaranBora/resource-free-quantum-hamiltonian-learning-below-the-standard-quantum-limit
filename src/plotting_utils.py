@@ -18,7 +18,7 @@ from extraction_and_evalution import collect_recovery_errors_from_data
 #  Plotting Functions
 # ──────────────────────────────────────────────────────────────────────────────
 
-def plot_errors_by_spreadingation(
+def plot_errors_by_spreadings(
     errors_by_time: dict,
     include_families: list = None,
     exclude_x_scale: set = None,

@@ -318,4 +318,3 @@ def run_derivative_pipeline(time_res: tuple, pert_res: tuple):
         betas_spreading=bp_common
     )
 
-spreading
