@@ -6,7 +6,7 @@ In this work, we introduce a novel quantum Hamiltonian Learning (HL) strategy ba
 
 ---
 
-This repository demonstrates Hamiltonian learning augmented by an “initial-state spreading” protocol. It includes:
+This repository provides the code and data for our Hamiltonian learning strategy introduced in our manuscript, which leverages an “initial-state spreading” strategy. It includes:
 
 1. **Original (“manuscript”) data** (`replot_original_data/`)  
    Scripts under `replot_original_data/` that contain the _original_ data folders and produce all plots exactly as in the manuscript:  
