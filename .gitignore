@@ -21,9 +21,9 @@ original_data_1/
 original_data_2/
 original_data_3/
 
-#replot_original_data/first_parameter_sweep_data
-#replot_original_data/second_parameter_sweep_data
-#replot_original_data/third_parameter_sweep_data
+replot_original_data/first_parameter_sweep_data
+replot_original_data/second_parameter_sweep_data
+replot_original_data/third_parameter_sweep_data
 
 
 
