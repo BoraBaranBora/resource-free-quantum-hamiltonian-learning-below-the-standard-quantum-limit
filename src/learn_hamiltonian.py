@@ -5,17 +5,14 @@ learn_hamiltonian.py
 Demo: recover Hamiltonians while sweeping arbitrary hyperparameters.
 Any combination of alpha, spreadings, measurements, shots, steps can be provided.
 """
-import os, sys
-
-# Because this file now lives in src/, __file__ == ".../src/learn_hamiltonian.py"
-DEMO_DIR = os.path.dirname(os.path.abspath(__file__))
-# plotting_utils.py and reproduction_pipelines.py are also in src/, so we just insert DEMO_DIR itself
-sys.path.insert(0, DEMO_DIR)
-
-import json, gc, argparse
+import os
+import sys
+import json
+import gc
+import argparse
 from itertools import product
 from datetime import datetime
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 import numpy as np
 import torch
@@ -30,13 +27,13 @@ from utils import convert_to_serializable, generate_advanced_codified_name
 
 def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     hilbert_dim = 2 ** num_qubits
-    density_mb = (hilbert_dim**2)*16/(1024**2)
-    avail_mb   = (gpu_memory_gb - memory_overhead_gb)*1024
-    per_batch  = 3*density_mb
-    return int((avail_mb//per_batch)*0.95//50*50)
+    density_mb = (hilbert_dim**2) * 16 / (1024**2)
+    avail_mb   = (gpu_memory_gb - memory_overhead_gb) * 1024
+    per_batch  = 3 * density_mb
+    return int((avail_mb // per_batch) * 0.95 // 50 * 50)
 
 def generate_times(alpha, N, delta_t):
-    return  [delta_t*(k**alpha) for k in range(1, N+1)]
+    return [delta_t * (k**alpha) for k in range(1, N+1)]
 
 def save_json(obj, path):
     clean = convert_to_serializable(obj)
@@ -45,15 +42,15 @@ def save_json(obj, path):
 
 def run_single_run(run_root, params, fixed):
     """
-    params: dict with keys alpha, spreading, measurements, shots, steps
-    fixed:  dict with the other fixed settings
+    Creates one combo‐directory under run_root, saves config.json and hamiltonians.json,
+    and returns (subdir_path, ham_list, current_times) so that training can occur outside.
     """
     # Build a unique subdir name
-    name_parts = [f"{k}_{v}" for k,v in params.items()]
+    name_parts = [f"{k}_{v}" for k, v in params.items()]
     subdir = os.path.join(run_root, "_".join(name_parts))
     os.makedirs(subdir, exist_ok=True)
 
-    # Build a JSON-safe run config
+    # Build and save JSON‐safe run config
     cfg = {
         **params,
         "num_qubits":    fixed["num_qubits"],
@@ -95,113 +92,37 @@ def run_single_run(run_root, params, fixed):
             })
     save_json(ham_list, os.path.join(subdir, "hamiltonians.json"))
 
-    # Loop over each Hamiltonian with its own progress bar
-    for info in tqdm(ham_list, desc="Hamiltonians", leave=False):
-        H = generate_hamiltonian(
-            family=info["family"],
-            num_qubits=fixed["num_qubits"],
-            **info["params"]
-        )
-
-        dg = DataGen(
-            num_qubits=fixed["num_qubits"],
-            times=current_times,
-            num_measurements=params["measurements"],
-            shots=params["shots"],
-            spreadings=params["spreading"],
-            initial_state_indices=[0],
-            seed=fixed["nn_seed"],
-            hamiltonian=H,
-        )
-        targets, times_t, basis, init = dg.generate_dataset()
-        ds     = TensorDataset(targets, times_t, basis, init)
-        loader = DataLoader(ds,
-                            batch_size=get_max_batch_size(fixed["num_qubits"]),
-                            shuffle=True)
-
-        # Build model+loss+optimizer
-        torch.manual_seed(fixed["nn_seed"])
-        d = 2 ** fixed["num_qubits"]
-        tri_len = d * (d + 1) // 2
-        predictor = Predictor(
-            input_size=tri_len,
-            output_size=tri_len,
-            hidden_layers=fixed["hidden_layers"],
-            activation_fn=fixed["ACTIVATION"],
-            ignore_input=True
-        ).to(fixed["device"])
-        criterion = Loss(num_qubits=fixed["num_qubits"])
-        optimizer = optim.AdamW(predictor.parameters())
-
-        # Training loop with progress bar
-        loss_hist = []
-        for epoch in trange(fixed["epochs"], desc="  Epochs", leave=False):
-            total = 0.0
-            predictor.train()
-            optimizer.zero_grad()
-            for xb, tb, bb, ib in loader:
-                xb, tb, bb, ib = (t.to(fixed["device"]) for t in (xb,tb,bb,ib))
-                loss = criterion(predictor, tb, ib, xb, bb)
-                loss.backward()
-                total += loss.item()
-            optimizer.step()
-            avg = total/len(loader)
-            loss_hist.append(avg)
-            # Early stopping
-            if epoch >= fixed["window"] + 5:
-                recent = np.mean(loss_hist[-fixed["window"]:])
-                prev   = np.mean(loss_hist[-(fixed["window"]+5):-5])
-                if abs(recent - prev) < fixed["tolerance"]:
-                    break
-
-        # Save outputs
-        #base = os.path.join(subdir, info["name"])
-        #torch.save(predictor.state_dict(), base + ".pth")
-        #save_json({"loss_history": loss_hist}, base + "_loss.json")
-        
-        # Save outputs under “embedding_<codename>.pth” and “embedding_<codename>_loss.json”
-        codename = info["name"]  # e.g. "hamiltonian_heisenberg_000_a8c99b86"
-        model_filename = f"embedding_{codename}.pth"
-        loss_filename  = f"embedding_{codename}_loss.json"
-
-        torch.save(predictor.state_dict(), os.path.join(subdir, model_filename))
-        save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
-
-
-        # Cleanup
-        del ds, predictor, xb, tb, bb, ib
-        torch.cuda.empty_cache()
-        gc.collect()
+    return subdir, ham_list, current_times
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    # These flags can be comma-lists
+    # These flags can be comma‐lists
     p.add_argument("--alphas",       required=True,
-                   help="Comma-separated α values, e.g. 0.8,1.0,1.2")
-    p.add_argument("--spreadings",     required=True,
-                   help="Comma-separated spreading levels, e.g. 10,50,100")
+                   help="Comma‐separated α values, e.g. 0.8,1.0,1.2")
+    p.add_argument("--spreadings",   required=True,
+                   help="Comma‐separated spreading levels, e.g. 10,50,100")
     p.add_argument("--measurements", required=True,
-                   help="Comma-separated #measurements, e.g. 25,50")
+                   help="Comma‐separated #measurements, e.g. 25,50")
     p.add_argument("--shots",        required=True,
-                   help="Comma-separated shots, e.g. 1,5")
+                   help="Comma‐separated shots, e.g. 1,5")
     p.add_argument("--steps",        required=True,
-                   help="Comma-separated N (time-step counts), e.g. 5,8,12")
+                   help="Comma‐separated N (time‐step counts), e.g. 5,8,12")
 
     # Fixed settings
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
-    p.add_argument("--per-family",   type=int, default=10,  help="Hams per family")
-    p.add_argument("--epochs",       type=int, default=1000,help="Training epochs")
-    p.add_argument("--window",       type=int, default=10,  help="Early-stop window")
-    p.add_argument("--tolerance",    type=float,default=1e-4,help="Convergence tol.")
-    p.add_argument("--delta-t",      type=float,default=0.1, help="Δt for time steps")
+    p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
+    p.add_argument("--epochs",       type=int, default=500, help="Training epochs")
+    p.add_argument("--window",       type=int, default=10,  help="Early‐stop window")
+    p.add_argument("--tolerance",    type=float, default=1e-4, help="Convergence tolerance")
+    p.add_argument("--delta-t",      type=float, default=0.1,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
     args = p.parse_args()
 
-    # Expand comma-lists into Python lists
+    # Expand comma‐lists into Python lists
     sweep = {
         "alphas":       [float(x) for x in args.alphas.split(",")],
-        "spreadings":     [int(x)   for x in args.spreadings.split(",")],
+        "spreadings":   [int(x)   for x in args.spreadings.split(",")],
         "measurements": [int(x)   for x in args.measurements.split(",")],
         "shots":        [int(x)   for x in args.shots.split(",")],
         "steps":        [int(x)   for x in args.steps.split(",")],
@@ -220,36 +141,119 @@ def main():
         "h_field_type":  "random",
         "include_transverse": True,
         "include_higher_order": 0,
-        "hidden_layers": [200,200,200],
+        "hidden_layers": [200, 200, 200],
         "ACTIVATION":    nn.Tanh,
         "nn_seed":       99901,
         "device":        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     }
     print(f"Using device: {fixed['device']}")
 
-    # Prepare top-level run folder
+    # Prepare top‐level run folder
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_root = os.path.join(args.output_dir, f"run_{ts}")
     os.makedirs(run_root, exist_ok=True)
 
-    # Iterate over every combination with a progress bar
+    # Build all parameter combinations
     combos = list(product(
         sweep["alphas"], sweep["spreadings"],
         sweep["measurements"], sweep["shots"],
         sweep["steps"]
     ))
-    for (alpha, spreading, meas, shot, step) in tqdm(combos, desc="Scaling Sweep"):
+
+    overall = tqdm(combos, desc="Scaling Sweep")
+    for (alpha, spreading, meas, shot, step) in overall:
         params = {
-          "alpha":        alpha,
-          "spreading":      spreading,
+          "alpha":       alpha,
+          "spreading":   spreading,
           "measurements": meas,
-          "shots":        shot,
-          "steps":        step
+          "shots":       shot,
+          "steps":       step
         }
-        run_single_run(run_root, params, fixed)
+
+        # Create subdir and ham_list
+        subdir, ham_list, current_times = run_single_run(run_root, params, fixed)
+        total_hams = len(ham_list)
+
+        # Train each Hamiltonian in this combo
+        for idx, info in enumerate(ham_list, start=1):
+            overall.set_postfix({
+                "α": f"{alpha:.3f}",
+                "spread": spreading,
+                "ham": f"{idx}/{total_hams}"
+            })
+
+            H = generate_hamiltonian(
+                family=info["family"],
+                num_qubits=fixed["num_qubits"],
+                **info["params"]
+            )
+
+            dg = DataGen(
+                num_qubits=fixed["num_qubits"],
+                times=current_times,
+                num_measurements=params["measurements"],
+                shots=params["shots"],
+                spreadings=params["spreading"],
+                initial_state_indices=[0],
+                seed=fixed["nn_seed"],
+                hamiltonian=H,
+            )
+            targets, times_t, basis, init = dg.generate_dataset()
+            ds = TensorDataset(targets, times_t, basis, init)
+            loader = DataLoader(
+                ds,
+                batch_size=get_max_batch_size(fixed["num_qubits"]),
+                shuffle=True
+            )
+
+            torch.manual_seed(fixed["nn_seed"])
+            d = 2 ** fixed["num_qubits"]
+            tri_len = d * (d + 1) // 2
+            predictor = Predictor(
+                input_size=tri_len,
+                output_size=tri_len,
+                hidden_layers=fixed["hidden_layers"],
+                activation_fn=fixed["ACTIVATION"],
+                ignore_input=True
+            ).to(fixed["device"])
+            criterion = Loss(num_qubits=fixed["num_qubits"])
+            optimizer = optim.AdamW(predictor.parameters())
+
+            loss_hist = []
+            for epoch in range(fixed["epochs"]):
+                predictor.train()
+                optimizer.zero_grad()
+                total_loss = 0.0
+                for xb, tb, bb, ib in loader:
+                    xb, tb, bb, ib = (t.to(fixed["device"]) for t in (xb, tb, bb, ib))
+                    loss = criterion(predictor, tb, ib, xb, bb)
+                    loss.backward()
+                    total_loss += loss.item()
+                optimizer.step()
+
+                avg = total_loss / len(loader)
+                loss_hist.append(avg)
+
+                if epoch >= fixed["window"] + 5:
+                    recent = np.mean(loss_hist[-fixed["window"]:])
+                    prev   = np.mean(loss_hist[-(fixed["window"]+5):-5])
+                    if abs(recent - prev) < fixed["tolerance"]:
+                        break
+
+            codename = info["name"]
+            model_filename = f"embedding_{codename}.pth"
+            loss_filename  = f"embedding_{codename}_loss.json"
+
+            torch.save(predictor.state_dict(), os.path.join(subdir, model_filename))
+            save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
+
+            del ds, predictor, xb, tb, bb, ib
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        overall.update()
 
     print("All sweeps completed.")
 
 if __name__ == "__main__":
     main()
-

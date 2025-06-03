@@ -346,7 +346,7 @@ def plot_errors_for_outer(
         raise ValueError("group_by must differ from scaling_param")
 
     # Determine axis labels from scaling_param and group_by
-    inner_label = "Time Stamps" if scaling_param == "times" else "spreadingation"
+    inner_label = "Time Stamps" if scaling_param == "times" else "Number of Spreadings"
     outer_label = {
         "alpha": "α",
         "times": "Time Stamps",
