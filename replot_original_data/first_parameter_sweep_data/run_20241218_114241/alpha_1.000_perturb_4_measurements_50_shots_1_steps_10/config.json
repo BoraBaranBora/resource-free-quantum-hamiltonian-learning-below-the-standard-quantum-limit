@@ -1,0 +1,41 @@
+{
+    "alpha": 1.0,
+    "perturb": 4,
+    "measurements": 50,
+    "shots": 1,
+    "steps": 10,
+    "num_qubits": 5,
+    "per_family": 10,
+    "epochs": 1000,
+    "window": 456522,
+    "tolerance": 0.0001,
+    "delta_t": 0.1,
+    "families": [
+        "Heisenberg"
+    ],
+    "coupling_type": "anisotropic_normal",
+    "h_field_type": "random",
+    "include_transverse": true,
+    "include_higher_order": 0,
+    "hidden_layers": [
+        200,
+        200,
+        200
+    ],
+    "activation": "<class 'Tanh'>",
+    "nn_seed": 99901,
+    "device": "cpu",
+    "times": [
+        0.0,
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1.0
+    ]
+}
