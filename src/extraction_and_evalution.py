@@ -34,27 +34,27 @@ def reconstruct_density_matrix_from_lower(flattened_vector: torch.Tensor) -> tor
 
 def collect_recovery_errors_from_data(
     base_run_dir: str,
-    scaling_param: str = "times",      # "times" or "perturb"
-    group_by: str = "perturb"          # "alpha", "times", or "perturb"
+    scaling_param: str = "times",      # "times" or "spreading"
+    group_by: str = "spreading"          # "alpha", "times", or "spreading"
 ) -> dict:
     """
     Walk through each “combo” subdirectory under base_run_dir. For each Hamiltonian:
       - Load config.json and hamiltonians.json
       - Reconstruct predictor, generate true Hamiltonian, compute error
-      - Use scaling_param (either "times" or "perturb") as the top‐level key (tuple of values)
-      - Use group_by (either "alpha", "times", or "perturb") as the third element in each tuple
+      - Use scaling_param (either "times" or "spreading") as the top‐level key (tuple of values)
+      - Use group_by (either "alpha", "times", or "spreading") as the third element in each tuple
 
-    scaling_param: str, must be "times" or "perturb". The code will read meta_params[scaling_param],
+    scaling_param: str, must be "times" or "spreading". The code will read meta_params[scaling_param],
                    convert it to a tuple, and use that as the dict key.
-    group_by:      str, must be "alpha", "times", or "perturb", and must differ from scaling_param.
+    group_by:      str, must be "alpha", "times", or "spreading", and must differ from scaling_param.
                    This value becomes the third element in each (error, true_family, group_key).
     Returns:
       errors_by_scaling: { scaling_tuple → [ (error, true_family, group_key) ] }
     """
-    if scaling_param not in {"times", "perturb"}:
-        raise ValueError("scaling_param must be 'times' or 'perturb'")
-    if group_by not in {"alpha", "times", "perturb"}:
-        raise ValueError("group_by must be 'alpha', 'times', or 'perturb'")
+    if scaling_param not in {"times", "spreading"}:
+        raise ValueError("scaling_param must be 'times' or 'spreading'")
+    if group_by not in {"alpha", "times", "spreading"}:
+        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
     if group_by == scaling_param:
         raise ValueError("group_by must differ from scaling_param")
 
@@ -82,18 +82,18 @@ def collect_recovery_errors_from_data(
         time_values = list(raw_times)       # e.g. [0.0, 0.5, 1.0]
         time_tuple  = tuple(time_values)
 
-        # ─── Extract perturb (for "perturb" grouping or grouping by perturb) ───
-        raw_perturb = meta_params.get("perturb", None)
-        if raw_perturb is None:
-            perturb_values = []
-        elif isinstance(raw_perturb, (list, tuple)):
-            if len(raw_perturb) == 0:
-                print(f"Skipping {combo_folder}: config.json has empty 'perturb' list.")
+        # ─── Extract spreading (for "spreading" grouping or grouping by spreading) ───
+        raw_spreading = meta_params.get("spreading", None)
+        if raw_spreading is None:
+            spreading_values = []
+        elif isinstance(raw_spreading, (list, tuple)):
+            if len(raw_spreading) == 0:
+                print(f"Skipping {combo_folder}: config.json has empty 'spreading' list.")
                 continue
-            perturb_values = list(raw_perturb)
+            spreading_values = list(raw_spreading)
         else:
-            perturb_values = [raw_perturb]
-        perturb_tuple = tuple(perturb_values)
+            spreading_values = [raw_spreading]
+        spreading_tuple = tuple(spreading_values)
 
         # ─── Extract alpha ───
         alpha = meta_params.get("alpha", None)
@@ -124,8 +124,8 @@ def collect_recovery_errors_from_data(
         # ─── Decide the scaling_list and scaling_tuple ───
         if scaling_param == "times":
             scaling_list = time_values       # iterate over time‐stamps if needed
-        else:  # scaling_param == "perturb"
-            scaling_list = perturb_values
+        else:  # scaling_param == "spreading"
+            scaling_list = spreading_values
 
         if len(scaling_list) == 0:
             print(f"Skipping {combo_folder}: no values found for '{scaling_param}'.")
@@ -173,8 +173,8 @@ def collect_recovery_errors_from_data(
             # ─── Decide the group_key based on group_by ───
             if group_by == "alpha":
                 group_key = alpha
-            elif group_by == "perturb":
-                group_key = perturb_tuple
+            elif group_by == "spreading":
+                group_key = spreading_tuple
             else:  # group_by == "times"
                 group_key = time_tuple
 
@@ -188,7 +188,7 @@ def collect_recovery_errors_from_data(
 
 def compute_betas_from_errors(
     errors_by_time: dict,
-    scaling_param='perturb',
+    scaling_param='spreading',
     include_families: list = None,
     exclude_x_scale: set = None,
 ):
@@ -197,7 +197,7 @@ def compute_betas_from_errors(
       errors_by_time: {
         time_stamps_tuple → [ (error, true_family, key) ]
       }
-    (where `key` is either a perturbation value or an α value),
+    (where `key` is either a spreading value or an α value),
     this function computes, for each unique `key`, the power‐law exponent b
     in the fit err ≈ a * (sum(time_stamps))^b.
 

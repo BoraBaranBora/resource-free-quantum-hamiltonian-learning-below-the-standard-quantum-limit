@@ -97,7 +97,7 @@ reproduce_data_SWEEP2(second_folder)
 reproduce_data_SWEEP3(third_folder)
 
 
-where each function invokes `learn_hamiltonian.py` (from `src/`) with the appropriate `--alphas`, `--spreadingss`, `--measurements`, `--shots`, `--steps`, and `--output-dir` arguments.
+where each function invokes `learn_hamiltonian.py` (from `src/`) with the appropriate `--alphas`, `--spreadings`, `--measurements`, `--shots`, `--steps`, and `--output-dir` arguments.
 
 `learn_hamiltonian.py` builds the neural network predictor, loops over the requested time or spreadings values, trains embeddings, and writes out:
 

@@ -47,11 +47,11 @@ Usage:
 Screenshot:
 ---------------
 (base) PS C:\…\replot_original_data> python precompute_errors.py
-  → Precomputing errors for: …/first_parameter_sweep_data (scaling_param=times, group_by=perturb)
+  → Precomputing errors for: …/first_parameter_sweep_data (scaling_param=times, group_by=spreading)
   → Pickled 42 keys to: …/cached_errors/sweep1_errors.pkl
   → Precomputing errors for: …/second_parameter_sweep_data (scaling_param=times, group_by=alpha)
   → Pickled 37 keys to: …/cached_errors/sweep2_errors.pkl
-  → Precomputing errors for: …/third_parameter_sweep_data (scaling_param=perturb, group_by=alpha)
+  → Precomputing errors for: …/third_parameter_sweep_data (scaling_param=spreading, group_by=alpha)
   → Pickled 27 keys to: …/cached_errors/sweep3_errors.pkl
 
 After this, running `composite_replotting.py` will be much faster:
@@ -88,8 +88,8 @@ def precompute_for_base(
 
 Parameters:
   - base_path (str): Directory like "first_parameter_sweep_data/"
-  - scaling_param (str): Either "times" or "perturb"
-  - group_by (str): Either "perturb" or "alpha" (must differ from scaling_param)
+  - scaling_param (str): Either "times" or "spreading"
+  - group_by (str): Either "spreading" or "alpha" (must differ from scaling_param)
   - out_fname (str): e.g. "sweep1_errors.pkl"
 """
     print(f"\n→ Precomputing errors for:\n    {base_path}\n"
@@ -143,12 +143,12 @@ if __name__ == "__main__":
     # Locate the three data folders relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # 1) Sweep 1: time‐scaling grouped by perturbation
+    # 1) Sweep 1: time‐scaling grouped by spreadingation
     base1 = os.path.join(script_dir, "first_parameter_sweep_data")
     precompute_for_base(
         base_path=base1,
         scaling_param="times",
-        group_by="perturb",
+        group_by="spreading",
         out_fname="sweep1_errors.pkl"
     )
 
@@ -161,11 +161,11 @@ if __name__ == "__main__":
         out_fname="sweep2_errors.pkl"
     )
 
-    # 3) Sweep 3: perturb‐scaling grouped by alpha
+    # 3) Sweep 3: spreading‐scaling grouped by alpha
     base3 = os.path.join(script_dir, "third_parameter_sweep_data")
     precompute_for_base(
         base_path=base3,
-        scaling_param="perturb",
+        scaling_param="spreading",
         group_by="alpha",
         out_fname="sweep3_errors.pkl"
     )

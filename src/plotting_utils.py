@@ -18,7 +18,7 @@ from extraction_and_evalution import collect_recovery_errors_from_data
 #  Plotting Functions
 # ──────────────────────────────────────────────────────────────────────────────
 
-def plot_errors_by_perturbation(
+def plot_errors_by_spreadingation(
     errors_by_time: dict,
     include_families: list = None,
     exclude_x_scale: set = None,
@@ -36,7 +36,7 @@ def plot_errors_by_perturbation(
     plt.xscale('log')
     plt.yscale('log')
 
-    # Gather all unique third‐tuple values (either perturbations or alphas)
+    # Gather all unique third‐tuple values (either spreadingations or alphas)
     unique_keys = sorted({key for _, errs in errors_by_time.items() for _, _, key in errs})
     cmap = plt.cm.viridis(np.linspace(0, 1, len(unique_keys)))
     color_map = {k: cmap[i] for i, k in enumerate(unique_keys)}
@@ -117,7 +117,7 @@ def plot_errors_by_perturbation(
     if label_prefix == "α":
         plt.title(f"{title_prefix} (grouped by α)", fontsize=18)
     else:
-        plt.title(f"{title_prefix} (grouped by perturbation)", fontsize=18)
+        plt.title(f"{title_prefix} (grouped by spreadingation)", fontsize=18)
 
     plt.grid(True, which='major', linestyle='-', linewidth=0.5, color='black', alpha=0.7)
     plt.grid(True, which='minor', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
@@ -134,12 +134,12 @@ def plot_beta_trends(
 ):
     """
     Plot fitted β values (learning‐rate exponents) against their corresponding keys
-    (either perturbation values or α values) on a log‐scale x‐axis.
+    (either spreadingation values or α values) on a log‐scale x‐axis.
 
     Parameters:
     -----------
     keys : np.ndarray
-        Array of keys (e.g. perturbation values or α values). Can be any shape; will be flattened.
+        Array of keys (e.g. spreadingation values or α values). Can be any shape; will be flattened.
     betas : np.ndarray
         Array of fitted β exponents corresponding to each key. Can be any shape; will be flattened.
     beta_errs : np.ndarray or None
@@ -147,7 +147,7 @@ def plot_beta_trends(
         error bars will be drawn. Can be any shape; will be flattened.
     label_prefix : str
         If plotting vs. α, pass "α" so that axes and titles label appropriately;
-        otherwise (default) it is interpreted as “perturbation.”
+        otherwise (default) it is interpreted as “spreadingation.”
 
     Behavior:
     ---------
@@ -238,8 +238,8 @@ def plot_beta_trends(
         xlabel = "α (log)"
         plt.title("Learning Rate β vs. α", fontsize=16)
     else:
-        xlabel = "Perturbation (log)"
-        plt.title("Learning Rate β vs. Perturbation", fontsize=16)
+        xlabel = "spreadingation (log)"
+        plt.title("Learning Rate β vs. spreadingation", fontsize=16)
 
     plt.xlabel(xlabel, fontsize=14)
     plt.ylabel("Learning Rate β", fontsize=14)
@@ -270,17 +270,17 @@ def plot_errors_for_outer(
         where `inner_tuple` was determined by scaling_param, and `group_key` by group_by.
 
     scaling_param : str
-        Either "times" or "perturb". Indicates which meta‐parameter was used as the dict key.
+        Either "times" or "spreading". Indicates which meta‐parameter was used as the dict key.
         This affects the x‐axis label: 
           - "times" → "Sum of Time Stamps (log)"
-          - "perturb" → "Sum of Perturbation (log)"
+          - "spreading" → "Sum of spreadingation (log)"
 
     group_by : str
-        One of "alpha", "times", or "perturb". Indicates which meta‐parameter is used as the 
+        One of "alpha", "times", or "spreading". Indicates which meta‐parameter is used as the 
         “outer” grouping. Affects the plot title:
           - "alpha" → "α"
           - "times" → "Time Stamps"
-          - "perturb" → "Perturbation"
+          - "spreading" → "spreadingation"
 
     outer_value : scalar or tuple
         The specific group_key value to plot. All triplets whose third element == outer_value
@@ -322,14 +322,14 @@ def plot_errors_for_outer(
 
     Example usage
     -------------
-    >>> # Suppose collect_recovery_errors_from_data(..., scaling_param="perturb", group_by="alpha")
-    >>> errs_by_perturb = {
+    >>> # Suppose collect_recovery_errors_from_data(..., scaling_param="spreading", group_by="alpha")
+    >>> errs_by_spreading = {
     ...     (0.1, 0.2): [ (0.05, "XY", 0.5), (0.08, "Heisenberg", 0.5), … ],
     ...     (0.2, 0.3): [ … ],
     ... }
     >>> plot_errors_for_outer(
-    ...     errors_by_scaling=errs_by_perturb,
-    ...     scaling_param="perturb",
+    ...     errors_by_scaling=errs_by_spreading,
+    ...     scaling_param="spreading",
     ...     group_by="alpha",
     ...     outer_value=0.5,
     ...     include_families=None,
@@ -338,19 +338,19 @@ def plot_errors_for_outer(
     ... )
     """
     # Validate arguments
-    if scaling_param not in {"times", "perturb"}:
-        raise ValueError("scaling_param must be 'times' or 'perturb'")
-    if group_by not in {"alpha", "times", "perturb"}:
-        raise ValueError("group_by must be 'alpha', 'times', or 'perturb'")
+    if scaling_param not in {"times", "spreading"}:
+        raise ValueError("scaling_param must be 'times' or 'spreading'")
+    if group_by not in {"alpha", "times", "spreading"}:
+        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
     if group_by == scaling_param:
         raise ValueError("group_by must differ from scaling_param")
 
     # Determine axis labels from scaling_param and group_by
-    inner_label = "Time Stamps" if scaling_param == "times" else "Perturbation"
+    inner_label = "Time Stamps" if scaling_param == "times" else "spreadingation"
     outer_label = {
         "alpha": "α",
         "times": "Time Stamps",
-        "perturb": "Perturbation"
+        "spreading": "spreadingation"
     }[group_by]
 
     # (1) Filter triplets where group_key == outer_value
@@ -616,27 +616,27 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
 def plot_dbetadalpha(
     alphas: np.ndarray,
     betas_time: np.ndarray,
-    betas_perturb: np.ndarray,
+    betas_spreading: np.ndarray,
     label_time: str = "Empirical $dβ_T/dα$",
-    label_perturb: str = "Empirical $dβ_R/dα$",
+    label_spreading: str = "Empirical $dβ_R/dα$",
     show_uncertainty_band: bool = True,
     band_half_width: float = 1/16
 ):
     """
-    Plot dβ/dα for both “time‐scaling” and “perturb‐scaling” fits,
+    Plot dβ/dα for both “time‐scaling” and “spreading‐scaling” fits,
     using linear‐fit slopes m_t and m_p from b vs. β_theory(α), so that:
       dβ_empirical/dα = m · (dβ_theory/dα).
 
     Inputs:
       alphas         : 1D array of α values (shape (N,))
       betas_time     : 1D array of fitted exponent b_T for time‐scaling
-      betas_perturb  : 1D array of fitted exponent b_R for perturb‐scaling
+      betas_spreading  : 1D array of fitted exponent b_R for spreading‐scaling
     """
     # (1) Filter out any NaNs and sort
-    mask = ~np.isnan(betas_time) & ~np.isnan(betas_perturb)
+    mask = ~np.isnan(betas_time) & ~np.isnan(betas_spreading)
     a_data = alphas[mask].astype(float)
     bt_data = betas_time[mask].astype(float)
-    bp_data = betas_perturb[mask].astype(float)
+    bp_data = betas_spreading[mask].astype(float)
 
     if a_data.size < 2:
         print("Not enough data to compute derivatives.")
@@ -692,14 +692,14 @@ def plot_dbetadalpha(
         label=f"{label_time} (slope={m_t:.2f})"
     )
 
-    # (6c) Empirical perturb‐scaling derivative (solid, C4)
+    # (6c) Empirical spreading‐scaling derivative (solid, C4)
     ax.plot(
         alphas_fine,
         d_fit_p,
         '-',
         linewidth=2,
         color='C4',
-        label=f"{label_perturb} (slope={m_p:.2f})"
+        label=f"{label_spreading} (slope={m_p:.2f})"
     )
 
     # (6d) ±band around time‐scaling derivative if requested

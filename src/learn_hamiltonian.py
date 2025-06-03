@@ -3,7 +3,7 @@
 learn_hamiltonian.py
 
 Demo: recover Hamiltonians while sweeping arbitrary hyperparameters.
-Any combination of alpha, perturbations, measurements, shots, steps can be provided.
+Any combination of alpha, spreadings, measurements, shots, steps can be provided.
 """
 import os, sys
 
@@ -45,7 +45,7 @@ def save_json(obj, path):
 
 def run_single_run(run_root, params, fixed):
     """
-    params: dict with keys alpha, perturb, measurements, shots, steps
+    params: dict with keys alpha, spreading, measurements, shots, steps
     fixed:  dict with the other fixed settings
     """
     # Build a unique subdir name
@@ -108,7 +108,7 @@ def run_single_run(run_root, params, fixed):
             times=current_times,
             num_measurements=params["measurements"],
             shots=params["shots"],
-            perturbations=params["perturb"],
+            spreadings=params["spreading"],
             initial_state_indices=[0],
             seed=fixed["nn_seed"],
             hamiltonian=H,
@@ -178,8 +178,8 @@ def main():
     # These flags can be comma-lists
     p.add_argument("--alphas",       required=True,
                    help="Comma-separated α values, e.g. 0.8,1.0,1.2")
-    p.add_argument("--perturbs",     required=True,
-                   help="Comma-separated perturb levels, e.g. 10,50,100")
+    p.add_argument("--spreadings",     required=True,
+                   help="Comma-separated spreading levels, e.g. 10,50,100")
     p.add_argument("--measurements", required=True,
                    help="Comma-separated #measurements, e.g. 25,50")
     p.add_argument("--shots",        required=True,
@@ -201,7 +201,7 @@ def main():
     # Expand comma-lists into Python lists
     sweep = {
         "alphas":       [float(x) for x in args.alphas.split(",")],
-        "perturbs":     [int(x)   for x in args.perturbs.split(",")],
+        "spreadings":     [int(x)   for x in args.spreadings.split(",")],
         "measurements": [int(x)   for x in args.measurements.split(",")],
         "shots":        [int(x)   for x in args.shots.split(",")],
         "steps":        [int(x)   for x in args.steps.split(",")],
@@ -234,14 +234,14 @@ def main():
 
     # Iterate over every combination with a progress bar
     combos = list(product(
-        sweep["alphas"], sweep["perturbs"],
+        sweep["alphas"], sweep["spreadings"],
         sweep["measurements"], sweep["shots"],
         sweep["steps"]
     ))
-    for (alpha, perturb, meas, shot, step) in tqdm(combos, desc="Inner Sweep (Fig1&2: time stamps; Fig3: spread state ensemble size)"):
+    for (alpha, spreading, meas, shot, step) in tqdm(combos, desc="Inner Sweep (Fig1&2: time stamps; Fig3: spread state ensemble size)"):
         params = {
           "alpha":        alpha,
-          "perturb":      perturb,
+          "spreading":      spreading,
           "measurements": meas,
           "shots":        shot,
           "steps":        step

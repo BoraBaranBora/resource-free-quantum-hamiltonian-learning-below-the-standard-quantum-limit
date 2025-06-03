@@ -26,7 +26,7 @@ SHOTS               = 1
 STEPS               = 8
 
 # Sweep lists
-PERTURBS = [1, 10, 25, 50, 100, 250, 500]
+SPREADINGS = [1, 10, 25, 50, 100, 250, 500]
 ALPHAS   = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 
@@ -39,20 +39,20 @@ def run(cmd):
 def reproduce_data_SWEEP1(base_folder: str):
     """
     Sweep over parameter combinations for SWEEP 1 (measurements=50).
-    Creates subfolders run_SWEEP1_perturb_<p>/ under base_folder.
+    Creates subfolders run_SWEEP1_spreading_<p>/ under base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS + 1))
 
-    for pert in tqdm(PERTURBS, desc="SWEEP 1 Data (measurements=50)"):
-        run_dir_name = f"run_SWEEP1_perturb_{pert}"
+    for pert in tqdm(SPREADINGS, desc="SWEEP 1 Data (measurements=50)"):
+        run_dir_name = f"run_SWEEP1_spreading_{pert}"
         outdir = os.path.join(base_folder, run_dir_name)
         os.makedirs(outdir, exist_ok=True)
 
         run([
             "python", DEMO,
             "--alphas",       "1.0",                      # fixed α
-            "--perturbs",     str(pert),                  # sweep this perturbation
+            "--spreadings",     str(pert),                  # sweep this spreadings
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
@@ -76,7 +76,7 @@ def reproduce_data_SWEEP2(base_folder: str):
         run([
             "python", DEMO,
             "--alphas",       str(alpha),                 # sweep this α
-            "--perturbs",     "50",                       # fixed perturbation = 50
+            "--spreadings",     "50",                       # fixed spreadings = 50
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
@@ -90,7 +90,7 @@ def reproduce_data_SWEEP3(base_folder: str):
     Creates subfolders run_SWEEP3_alpha_<α>/ under base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
-    perturb_list = ",".join(str(p) for p in PERTURBS)
+    spreading_list = ",".join(str(p) for p in SPREADINGS)
 
     for alpha in tqdm(ALPHAS, desc="SWEEP 3 Data (measurements=25)"):
         run_dir_name = f"run_SWEEP3_alpha_{alpha}"
@@ -100,7 +100,7 @@ def reproduce_data_SWEEP3(base_folder: str):
         run([
             "python", DEMO,
             "--alphas",       str(alpha),                 # sweep this α
-            "--perturbs",     perturb_list,               # sweep all PERTURBS internally
+            "--spreadings",     spreading_list,               # sweep all SPREADINGS internally
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        str(STEPS),                  # exactly 8 steps

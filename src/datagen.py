@@ -3,14 +3,13 @@ import numpy as np
 from torch.utils.data import Dataset
 
 class DataGen(Dataset):
-    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, perturbations=2, perturbation_depth=2, hamiltonian=None):
+    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=2, perturbation_depth=2, hamiltonian=None):
         self.times = np.array(times[1:], dtype=np.float64).flatten()
         self.num_measurements = num_measurements
         self.shots = shots  # Number of times each measurement is performed
         self.num_qubits = num_qubits
         self.seed = seed
-        self.perturbations = perturbations
-        self.perturbation_depth = perturbation_depth
+        self.spreadings = spreadings
         self.initial_state_indices = initial_state_indices
         self.H = torch.tensor([[1, 1], [1, -1]], dtype=torch.complex64) / torch.sqrt(torch.tensor(2, dtype=torch.complex64))
         self.S_dagger = torch.tensor([[1, 0], [0, -1j]], dtype=torch.complex64)
@@ -74,16 +73,14 @@ class DataGen(Dataset):
     
     def apply_random_gates(self, state, repetitions=0):
         """
-        Apply random single-qubit unitaries (according to Haar measure) to each qubit multiple times.
+        Apply random single-qubit unitaries (according to Haar measure) to each qubit.
 
         Parameters:
         state (torch.Tensor): Initial state to apply the gates to.
-        repetitions (int): Number of times to apply random unitaries.
-
+        
         Returns:
         torch.Tensor: State after applying the random gates.
         """
-        repetitions = self.perturbation_depth
         num_qubits = int(np.log2(state.shape[0]))
         
         def random_single_qubit_unitary():
@@ -106,22 +103,22 @@ class DataGen(Dataset):
             # The Haar unitary is RZ(λ) * RY(θ) * RZ(φ)
             return RZ_lambda @ RY @ RZ_phi
 
-        for _ in range(repetitions):  # Apply the sequence multiple times
-            for i in range(num_qubits):
-                # Generate a random single-qubit unitary matrix
-                matrix = random_single_qubit_unitary()
 
-                # Construct the full gate for the multi-qubit state
-                full_gate = 1
-                for j in range(num_qubits):
-                    if j == i:
-                        full_gate = torch.kron(full_gate, matrix) if type(full_gate) != int else matrix
-                    else:
-                        full_gate = torch.kron(full_gate, torch.eye(2, dtype=torch.complex64)) if type(full_gate) != int else torch.eye(2, dtype=torch.complex64)
+        for i in range(num_qubits):
+            # Generate a random single-qubit unitary matrix
+            matrix = random_single_qubit_unitary()
 
-                # Apply the gate to the state (left and right multiplication for density matrix)
-                state = full_gate @ state @ full_gate.conj().T
-        
+            # Construct the full gate for the multi-qubit state
+            full_gate = 1
+            for j in range(num_qubits):
+                if j == i:
+                    full_gate = torch.kron(full_gate, matrix) if type(full_gate) != int else matrix
+                else:
+                    full_gate = torch.kron(full_gate, torch.eye(2, dtype=torch.complex64)) if type(full_gate) != int else torch.eye(2, dtype=torch.complex64)
+
+            # Apply the gate to the state (left and right multiplication for density matrix)
+            state = full_gate @ state @ full_gate.conj().T
+    
         return state
 
     def generate_dataset(self):
@@ -133,7 +130,7 @@ class DataGen(Dataset):
         measurement_bases_samples = [np.random.choice(['X', 'Y', 'Z'], size=self.num_qubits) for _ in range(self.num_measurements)]
 
         for index in self.initial_state_indices:
-            for _ in range(self.perturbations):
+            for _ in range(self.spreadings):
                 basis_state = torch.zeros(2 ** self.num_qubits, dtype=torch.complex64)
                 basis_state[index] = 1.0
                 basis_state = torch.outer(basis_state, basis_state.conj())

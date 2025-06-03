@@ -17,7 +17,7 @@ from extraction_and_evalution import (
 )
 
 from plotting_utils import (
-    plot_errors_by_perturbation,
+    plot_errors_by_spreadings,
     plot_errors_for_outer,
     plot_beta_trends,
     plot_betas_vs_alpha_alternative,
@@ -25,9 +25,10 @@ from plotting_utils import (
 )
 
 
+
 def run_sweep1_pipeline(base1: str, cache_dir: str):
     """
-    Sweep 1 (time‐scaling by perturb).  Expects
+    Sweep 1 (time‐scaling by spreading).  Expects
       base1
     to point to first_parameter_sweep_data/.  It will look for
       {cache_dir}/sweep1_errors.pkl
@@ -55,7 +56,7 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
             errs = collect_recovery_errors_from_data(
                 run_dir,
                 scaling_param="times",
-                group_by="perturb"
+                group_by="spreading"
             )
             for time_tuple, triplets in errs.items():
                 combined_errors.setdefault(time_tuple, []).extend(triplets)
@@ -68,15 +69,15 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
             pickle.dump(combined_errors, f)
         print(f"  → Wrote out {len(combined_errors)} keys to {cache_path}")
 
-    # 1) Error vs ∑(time), colored/fitted by perturb
-    plot_errors_by_perturbation(
+    # 1) Error vs ∑(time), colored/fitted by spreading
+    plot_errors_by_spreadings(
         combined_errors,
         include_families=None,
         exclude_x_scale=None,
         label_prefix="P"
     )
 
-    # 2) Compute β vs perturb and plot
+    # 2) Compute β vs spreading and plot
     keys, betas, beta_errs = compute_betas_from_errors(
         combined_errors,
         scaling_param="times",
@@ -192,7 +193,7 @@ def run_sweep2_outer(base_time: str, cache_dir: str):
 
 def run_sweep3_pipeline(base_pert: str, cache_dir: str):
     """
-    Sweep 3 (perturb‐scaling by alpha).  Expects
+    Sweep 3 (spreading‐scaling by alpha).  Expects
       base_pert
     to point to third_parameter_sweep_data/.  It will look for
       {cache_dir}/sweep3_errors.pkl first.
@@ -218,11 +219,11 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
 
             errs = collect_recovery_errors_from_data(
                 run_dir,
-                scaling_param="perturb",
+                scaling_param="spreading",
                 group_by="alpha"
             )
-            for perturb_tuple, triplets in errs.items():
-                combined_errors.setdefault(perturb_tuple, []).extend(triplets)
+            for spreading_tuple, triplets in errs.items():
+                combined_errors.setdefault(spreading_tuple, []).extend(triplets)
 
         if not combined_errors:
             print("  No Sweep 3 data found; skipping.\n")
@@ -234,7 +235,7 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
 
     alphas_pert, betas_pert, beta_errs_pert = compute_betas_from_errors(
         combined_errors,
-        scaling_param="perturb",
+        scaling_param="spreading",
         include_families=None,
         exclude_x_scale=None
     )
@@ -252,10 +253,10 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
 
 def run_sweep3_outer(base_pert: str, cache_dir: str):
     """
-    Sweep 3 Outer: pick one α (largest) and plot Error vs ∑(perturb).
+    Sweep 3 Outer: pick one α (largest) and plot Error vs ∑(spreading).
     Expects cached errors under {cache_dir}/sweep3_errors.pkl.
     """
-    print("\n=== Running Sweep 3 Outer (Error vs ∑(perturb) for one α) ===")
+    print("\n=== Running Sweep 3 Outer (Error vs ∑(spreading) for one α) ===")
     cache_path = os.path.join(cache_dir, "sweep3_errors.pkl")
 
     if os.path.exists(cache_path):
@@ -276,7 +277,7 @@ def run_sweep3_outer(base_pert: str, cache_dir: str):
 
     plot_errors_for_outer(
         errors_by_scaling=combined_errors,
-        scaling_param="perturb",
+        scaling_param="spreading",
         group_by="alpha",
         outer_value=alpha_value,
         include_families=None,
@@ -314,5 +315,7 @@ def run_derivative_pipeline(time_res: tuple, pert_res: tuple):
     plot_dbetadalpha(
         alphas=common_alphas,
         betas_time=bt_common,
-        betas_perturb=bp_common
+        betas_spreading=bp_common
     )
+
+spreading
