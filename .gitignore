@@ -25,11 +25,9 @@ replot_original_data/first_parameter_sweep_data
 replot_original_data/second_parameter_sweep_data
 replot_original_data/third_parameter_sweep_data
 
-
-
-original_data_figure1/
-original_data_figure2/
-original_data_figure3/
+reproduce_original_data/first_parameter_sweep_data
+reproduce_original_data/second_parameter_sweep_data
+reproduce_original_data/third_parameter_sweep_data
 
 demo/backup.py
 
