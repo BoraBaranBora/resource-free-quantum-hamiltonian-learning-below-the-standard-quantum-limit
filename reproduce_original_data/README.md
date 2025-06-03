@@ -21,7 +21,7 @@ reproduce_original_data/
 └── composite_replotting.py
 
 - **`first_parameter_sweep_data/`**, **`second_parameter_sweep_data/`**, **`third_parameter_sweep_data/`**  
-  Each of these folders should contain subfolders named `run_SWEEP#_<…>/`, and inside each “run_…” folder are the “combo” directories (e.g. `alpha_<…>_perturb_<…>_measurements_<…>_shots_<…>_steps_<…>/`) with:
+  Each of these folders should contain subfolders named `run_SWEEP#_<…>/`, and inside each “run_…” folder are the “combo” directories (e.g. `alpha_<…>_spreadings_<…>_measurements_<…>_shots_<…>_steps_<…>/`) with:
   - `config.json`
   - `hamiltonians.json`
   - `embedding_<codename>.pth`
@@ -34,11 +34,11 @@ reproduce_original_data/
 - **`precompute_errors.py`**  
   Traverses each “run_…” and “combo” folder, calls `collect_recovery_errors_from_data(...)` to extract and aggregate all recovery‐error tuples, then writes three pickle files:
   - `cached_errors/sweep1_errors.pkl`  
-    (time‐scaling grouped by perturbation, from `first_parameter_sweep_data/`)
+    (time‐scaling grouped by number of initial state spreadings, from `first_parameter_sweep_data/`)
   - `cached_errors/sweep2_errors.pkl`  
     (time‐scaling grouped by α, from `second_parameter_sweep_data/`)
   - `cached_errors/sweep3_errors.pkl`  
-    (perturb‐scaling grouped by α, from `third_parameter_sweep_data/`)
+    (spreadings‐scaling grouped by α, from `third_parameter_sweep_data/`)
 
 - **`cached_errors/` (auto‐generated)**  
   Contains the three pickles listed above. Once these exist, `composite_replotting.py` can load them directly (avoiding hours of re‐processing all embeddings).
@@ -55,16 +55,16 @@ reproduce_original_data/
 - **Toggle Which Sweeps to Run**  
   At the top of `rerun_selected_sweeps.py`, set the booleans:
   ```python
-  run_sweep1 = True    # SWEEP 1: α=1.0 (fixed), perturb ∈ {1,10,25,50,100,250,500}, measurements=50, shots=1, steps=1..8
-  run_sweep2 = False   # SWEEP 2: α ∈ {0.3,0.4,…,1.0}, perturb=50 (fixed), measurements=25, shots=1, steps=1..8
-  run_sweep3 = False   # SWEEP 3: α ∈ {0.3,0.4,…,1.0}, perturb ∈ {1,10,25,50,100,250,500}, measurements=25, shots=1, steps=8 (fixed)
+  run_sweep1 = True    # SWEEP 1: α=1.0 (fixed), spreadings ∈ {1,10,25,50,100,250,500}, measurements=50, shots=1, steps=1..8
+  run_sweep2 = False   # SWEEP 2: α ∈ {0.3,0.4,…,1.0}, spreadings=50 (fixed), measurements=25, shots=1, steps=1..8
+  run_sweep3 = False   # SWEEP 3: α ∈ {0.3,0.4,…,1.0}, spreadings ∈ {1,10,25,50,100,250,500}, measurements=25, shots=1, steps=8 (fixed)
 
 ### SWEEP 1
 
-Creates `first_parameter_sweep_data/run_SWEEP1_perturb_<p>/` for each `p ∈ {1,10,25,50,100,250,500}`.
+Creates `first_parameter_sweep_data/run_SWEEP1_spreadings_<p>/` for each `p ∈ {1,10,25,50,100,250,500}`.
 
-Inside each `run_SWEEP1_perturb_<p>/`, you’ll find combo directories named  
-`alpha_1.000_perturb_<p>_measurements_50_shots_1_steps_<N>/` for `N=1..8`.
+Inside each `run_SWEEP1_spreadings_<p>/`, you’ll find combo directories named  
+`alpha_1.000_spreadings_<p>_measurements_50_shots_1_steps_<N>/` for `N=1..8`.
 
 Each combo folder contains `config.json`, `hamiltonians.json`, and the trained embeddings (`.pth`) and loss logs.
 
@@ -75,7 +75,7 @@ Each combo folder contains `config.json`, `hamiltonians.json`, and the trained e
 Creates `second_parameter_sweep_data/run_SWEEP2_alpha_<α>/` for each `α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}`.
 
 Inside each `run_SWEEP2_alpha_<α>/`, you’ll find  
-`alpha_<α>_perturb_50_measurements_25_shots_1_steps_<N>/` for `N=1..8`.
+`alpha_<α>_spreadings_50_measurements_25_shots_1_steps_<N>/` for `N=1..8`.
 
 ---
 
@@ -84,7 +84,7 @@ Inside each `run_SWEEP2_alpha_<α>/`, you’ll find
 Creates `third_parameter_sweep_data/run_SWEEP3_alpha_<α>/` for each `α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}`.
 
 Inside each `run_SWEEP3_alpha_<α>/`, you’ll find combo folders  
-`alpha_<α>_perturb_<p>_measurements_25_shots_1_steps_8/` for each `p ∈ {1,10,25,50,100,250,500}`.
+`alpha_<α>_spreadings_<p>_measurements_25_shots_1_steps_8/` for each `p ∈ {1,10,25,50,100,250,500}`.
 
 ---
 
@@ -97,9 +97,9 @@ reproduce_data_SWEEP2(second_folder)
 reproduce_data_SWEEP3(third_folder)
 
 
-where each function invokes `learn_hamiltonian.py` (from `src/`) with the appropriate `--alphas`, `--perturbs`, `--measurements`, `--shots`, `--steps`, and `--output-dir` arguments.
+where each function invokes `learn_hamiltonian.py` (from `src/`) with the appropriate `--alphas`, `--spreadingss`, `--measurements`, `--shots`, `--steps`, and `--output-dir` arguments.
 
-`learn_hamiltonian.py` builds the neural network predictor, loops over the requested time or perturb values, trains embeddings, and writes out:
+`learn_hamiltonian.py` builds the neural network predictor, loops over the requested time or spreadings values, trains embeddings, and writes out:
 
 - `config.json`
 - `hamiltonians.json`
@@ -118,11 +118,11 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
 - **How It Works**  
   1. For each `run_*` subfolder in `first_parameter_sweep_data/`, calls  
      ```python
-     collect_recovery_errors_from_data(run_folder_path, scaling_param="times", group_by="perturb")
+     collect_recovery_errors_from_data(run_folder_path, scaling_param="times", group_by="spreadings")
      ```  
      and merges all results into a single dictionary.  
   2. Repeats for `second_parameter_sweep_data/` with `scaling_param="times"`, `group_by="alpha"`.  
-  3. Repeats for `third_parameter_sweep_data/` with `scaling_param="perturb"`, `group_by="alpha"`.  
+  3. Repeats for `third_parameter_sweep_data/` with `scaling_param="spreadings"`, `group_by="alpha"`.  
   4. Writes out three pickles into `cached_errors/`:  
      - `sweep1_errors.pkl`  
      - `sweep2_errors.pkl`  
@@ -133,7 +133,7 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
 ### 3. `composite_replotting.py`
 
 - **Purpose**  
-  Generate the final composite figures after completing all three parameter sweeps. These plots summarize error and β‐scaling relationships across time and perturbation dimensions.
+  Generate the final composite figures after completing all three parameter sweeps. These plots summarize error and β‐scaling relationships across time and number of initial state spreadings dimensions.
 
 - **How It Works**    
   1. Run:
@@ -141,8 +141,9 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
      python composite_replotting.py
      ```  
   2. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
-     - **Figure 1**: “Error vs ∑time” (colored/fitted by perturbation) and “β vs perturbation”  
-     - **Figure 2**: “β vs α” (standard & theory+fit) and “Error vs ∑time” for one representative α  
-     - **Figure 3**: “β vs α” (standard & theory+fit) and “Error vs ∑perturb” for one representative α  
-     - **Derivative‐comparison**: dβ/dα vs α (time‐ vs perturb‐scaling)  
+   - **Figure 1:** Error vs ∑time (colored/fitted by number of state initial state spreadings) and β vs number of state initial state spreadings.  
+   - **Figure 2:** Error vs ∑time for one α and Error vs spreadings for one α.  
+   - **Figure 3a:** β vs α, alternative β vs α (theory + linear‐fit), β vs α, alternative β vs α (theory + linear‐fit).  
+   - **Figure 3a:** Derivative comparison: dβ/dα vs α (time‐scaling vs spreadings‐scaling).  
+ 
   3. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).

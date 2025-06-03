@@ -37,10 +37,11 @@ replot_original_data/
      python composite_replotting.py
      ```  
   2. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
-     - **Figure 1**: “Error vs ∑time” (colored/fitted by perturbation) and “β vs perturbation”  
-     - **Figure 2**: “β vs α” (standard & theory+fit) and “Error vs ∑time” for one representative α  
-     - **Figure 3**: “β vs α” (standard & theory+fit) and “Error vs ∑perturb” for one representative α  
-     - **Derivative‐comparison**: dβ/dα vs α (time‐ vs perturb‐scaling)  
+   - **Figure 1:** Error vs ∑time (colored/fitted by number of state initial state spreadings) and β vs number of state initial state spreadings.  
+   - **Figure 2:** Error vs ∑time for one α and Error vs spreadings for one α.  
+   - **Figure 3a:** β vs α, alternative β vs α (theory + linear‐fit), β vs α, alternative β vs α (theory + linear‐fit).  
+   - **Figure 3a:** Derivative comparison: dβ/dα vs α (time‐scaling vs spreadings‐scaling).  
+
   3. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).
 
 
