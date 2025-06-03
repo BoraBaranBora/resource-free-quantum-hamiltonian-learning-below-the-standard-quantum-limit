@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 class DataGen(Dataset):
-    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=2, perturbation_depth=2, hamiltonian=None):
+    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=2, hamiltonian=None):
         self.times = np.array(times[1:], dtype=np.float64).flatten()
         self.num_measurements = num_measurements
         self.shots = shots  # Number of times each measurement is performed
@@ -134,7 +134,7 @@ class DataGen(Dataset):
                 basis_state = torch.zeros(2 ** self.num_qubits, dtype=torch.complex64)
                 basis_state[index] = 1.0
                 basis_state = torch.outer(basis_state, basis_state.conj())
-                scattered_state = self.apply_random_gates(basis_state, repetitions=self.perturbation_depth)
+                scattered_state = self.apply_random_gates(basis_state)
                 for time in self.times:
                     initial_state = scattered_state
                     evolved_state = self.evolve_state_with_hamiltonian(initial_state, time)
