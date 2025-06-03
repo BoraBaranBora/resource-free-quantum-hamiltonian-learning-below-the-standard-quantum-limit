@@ -4,14 +4,17 @@ composite_plotting.py
 
 Calls five pipelines defined in plotting_pipelines.py:
 
-  – run_figure1_pipeline(first_parameter_sweep_path)
-  – run_time_scaling_pipeline(second_parameter_sweep_path)
-  – run_time_outer_pipeline(second_parameter_sweep_path)
-  – run_perturb_scaling_pipeline(third_parameter_sweep_path)
-  – run_perturb_outer_pipeline(third_parameter_sweep_path)
-  – run_derivative_pipeline(time_res, pert_res)
+  • run_figure1_pipeline(first_parameter_sweep_path)
+  • run_time_scaling_pipeline(second_parameter_sweep_path)
+  • run_time_outer_pipeline(second_parameter_sweep_path)
+  • run_perturb_scaling_pipeline(third_parameter_sweep_path)
+  • run_perturb_outer_pipeline(third_parameter_sweep_path)
+  • run_derivative_pipeline(time_res, pert_res)
 
-Usage (run from within the same folder that contains these three subfolders and src/):
+Usage (run from within the same folder that contains these three subfolders and in a sibling directory of src/):
+    • "first_parameter_sweep_data"
+    • "second_parameter_sweep_data"
+    • "third_parameter_sweep_data"
     python composite_plotting.py
 """
 
