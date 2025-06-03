@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""
+reproduction_pipelines.py
+
+Contains three functions to re‐generate data sweeps:
+  • reproduce_data_SWEEP1(base_folder)
+  • reproduce_data_SWEEP2(base_folder)
+  • reproduce_data_SWEEP3(base_folder)
+
+Each “base_folder” argument is a path where subfolders named run_SWEEP1_…,
+run_SWEEP2_…, or run_SWEEP3_… will be created.  No toggles or booleans here.
+"""
+
+import os
+import subprocess
+from tqdm import tqdm
+
+# Path to your demo script
+DEMOPATH = os.path.dirname(os.path.abspath(__file__))
+DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
+
+# Shared fixed settings
+MEASUREMENTS_SWEEP1 = 50   # for SWEEP 1
+MEASUREMENTS_SWEEP2 = 25   # for SWEEP 2 and SWEEP 3
+SHOTS               = 1
+STEPS               = 8
+
+# Sweep lists
+PERTURBS = [1, 10, 25, 50, 100, 250, 500]
+ALPHAS   = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+
+def run(cmd):
+    """Helper to print and execute a subprocess command."""
+    print(">>>", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+
+
+def reproduce_data_SWEEP1(base_folder: str):
+    """
+    Sweep over parameter combinations for SWEEP 1 (measurements=50).
+    Creates subfolders run_SWEEP1_perturb_<p>/ under base_folder.
+    """
+    os.makedirs(base_folder, exist_ok=True)
+    step_list = ",".join(str(i) for i in range(1, STEPS + 1))
+
+    for pert in tqdm(PERTURBS, desc="SWEEP 1 Data (measurements=50)"):
+        run_dir_name = f"run_SWEEP1_perturb_{pert}"
+        outdir = os.path.join(base_folder, run_dir_name)
+        os.makedirs(outdir, exist_ok=True)
+
+        run([
+            "python", DEMO,
+            "--alphas",       "1.0",                      # fixed α
+            "--perturbs",     str(pert),                  # sweep this perturbation
+            "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
+            "--shots",        str(SHOTS),
+            "--steps",        step_list,                  # sweep steps = 1…8
+            "--output-dir",   outdir
+        ])
+
+
+def reproduce_data_SWEEP2(base_folder: str):
+    """
+    Sweep over parameter combinations for SWEEP 2 (measurements=25).
+    Creates subfolders run_SWEEP2_alpha_<α>/ under base_folder.
+    """
+    os.makedirs(base_folder, exist_ok=True)
+    step_list = ",".join(str(i) for i in range(1, STEPS + 1))
+
+    for alpha in tqdm(ALPHAS, desc="SWEEP 2 Data (measurements=25)"):
+        run_dir_name = f"run_SWEEP2_alpha_{alpha}"
+        outdir = os.path.join(base_folder, run_dir_name)
+        os.makedirs(outdir, exist_ok=True)
+
+        run([
+            "python", DEMO,
+            "--alphas",       str(alpha),                 # sweep this α
+            "--perturbs",     "50",                       # fixed perturbation = 50
+            "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
+            "--shots",        str(SHOTS),
+            "--steps",        step_list,                  # sweep steps = 1…8
+            "--output-dir",   outdir
+        ])
+
+
+def reproduce_data_SWEEP3(base_folder: str):
+    """
+    Sweep over parameter combinations for SWEEP 3 (measurements=25).
+    Creates subfolders run_SWEEP3_alpha_<α>/ under base_folder.
+    """
+    os.makedirs(base_folder, exist_ok=True)
+    perturb_list = ",".join(str(p) for p in PERTURBS)
+
+    for alpha in tqdm(ALPHAS, desc="SWEEP 3 Data (measurements=25)"):
+        run_dir_name = f"run_SWEEP3_alpha_{alpha}"
+        outdir = os.path.join(base_folder, run_dir_name)
+        os.makedirs(outdir, exist_ok=True)
+
+        run([
+            "python", DEMO,
+            "--alphas",       str(alpha),                 # sweep this α
+            "--perturbs",     perturb_list,               # sweep all PERTURBS internally
+            "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
+            "--shots",        str(SHOTS),
+            "--steps",        str(STEPS),                  # exactly 8 steps
+            "--output-dir",   outdir
+        ])
+
