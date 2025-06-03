@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_selected_sweeps.py
+rerun_selected_sweeps.py
 
 This script controls which data‐generation sweeps to execute, by toggling
 three boolean flags at the top.  Each sweep invokes learn_hamiltonian.py
