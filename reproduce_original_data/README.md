@@ -9,16 +9,16 @@ This subdirectory contains everything needed to re‐generate the embedding file
 Place the following items at this level:
 
 reproduce_original_data/
-├─ first_parameter_sweep_data/ ← created by SWEEP 1 when rerun_selected_sweeps.py
-├─ second_parameter_sweep_data/ ← created by SWEEP 2 when rerun_selected_sweeps.py
-├─ third_parameter_sweep_data/ ← created by SWEEP 3 when rerun_selected_sweeps.py
-├─ rerun_selected_sweeps.py
-├─ composite_replotting.py
-├─ precompute_errors.py
-└─ (optional) cached_errors/ ← created by running precompute_errors.py
-    ├─ sweep1_errors.pkl
-    ├─ sweep2_errors.pkl
-    └─ sweep3_errors.pkl
+├── rerun_selected_sweeps.py
+├── first_parameter_sweep_data/     ← created by SWEEP 1 when rerun_selected_sweeps.py
+├── second_parameter_sweep_data/    ← created by SWEEP 2 when rerun_selected_sweeps.py
+├── third_parameter_sweep_data/     ← created by SWEEP 3 when rerun_selected_sweeps.py
+├── precompute_errors.py
+├── cached_errors/                  ← created by running precompute_errors.py (optional)
+│   ├── sweep1_errors.pkl
+│   ├── sweep2_errors.pkl
+│   └── sweep3_errors.pkl
+└── composite_replotting.py
 
 - **`first_parameter_sweep_data/`**, **`second_parameter_sweep_data/`**, **`third_parameter_sweep_data/`**  
   Each of these folders should contain subfolders named `run_SWEEP#_<…>/`, and inside each “run_…” folder are the “combo” directories (e.g. `alpha_<…>_perturb_<…>_measurements_<…>_shots_<…>_steps_<…>/`) with:
@@ -106,38 +106,6 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
 - `embedding_<codename>.pth`
 - `embedding_<codename>_loss.json`
 - …etc.
-
-After completion, you should see three top‐level folders:
-
-reproduce_original_data/
-├─ first_parameter_sweep_data/
-│   ├─ run_SWEEP1_perturb_1/
-│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_1/
-│   │   ├─ alpha_1.000_perturb_1_measurements_50_shots_1_steps_2/
-│   │   └─ … (up to steps=8)
-│   ├─ run_SWEEP1_perturb_10/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP1_perturb_<p> per perturbation)
-│
-├─ second_parameter_sweep_data/
-│   ├─ run_SWEEP2_alpha_0.3/
-│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_1/
-│   │   ├─ alpha_0.300_perturb_50_measurements_25_shots_1_steps_2/
-│   │   └─ … (up to steps=8)
-│   ├─ run_SWEEP2_alpha_0.4/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP2_alpha_<α> per α)
-│
-├─ third_parameter_sweep_data/
-│   ├─ run_SWEEP3_alpha_0.3/
-│   │   ├─ alpha_0.300_perturb_1_measurements_25_shots_1_steps_8/
-│   │   ├─ alpha_0.300_perturb_10_measurements_25_shots_1_steps_8/
-│   │   └─ … (all perturb values at steps=8)
-│   ├─ run_SWEEP3_alpha_0.4/
-│   │   └─ … (same structure)
-│   └─ … (one run_SWEEP3_alpha_<α> per α)
-└─ rerun_selected_sweeps.py
-
 
 ---
 

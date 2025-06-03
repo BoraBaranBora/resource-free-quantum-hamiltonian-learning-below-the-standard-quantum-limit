@@ -9,11 +9,12 @@ This subdirectory contains everything needed to go from the raw “combo” embe
 Place the following items at this level:
 
 replot_original_data/
-├─ composite_replotting.py
-└─ cached_errors/ ← created by running precompute_errors.py
-    ├─ sweep1_errors.pkl
-    ├─ sweep2_errors.pkl
-    └─ sweep3_errors.pkl
+├── cached_errors/                  
+│   ├── sweep1_errors.pkl
+│   ├── sweep2_errors.pkl
+│   └── sweep3_errors.pkl
+└── composite_replotting.py
+
 
 - **`composite_replotting.py`**  
   Orchestrates all plotting pipelines (Figures 1–3). It expects to load precomputed error–data pickles from `cached_errors/
