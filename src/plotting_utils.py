@@ -916,6 +916,7 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
     plt.show()
 
 
+
 def plot_dbetadalpha(
     alphas: np.ndarray,
     betas_time: np.ndarray,
@@ -927,8 +928,8 @@ def plot_dbetadalpha(
 ):
     """
     Plot dβ/dα for both “time‐scaling” and “perturb‐scaling” fits,
-    using the linear‐fit slopes m_t and m_p from b vs. β_theory(α), so that:
-      dβ_empirical/dα = m * (dβ_theory/dα).
+    using linear‐fit slopes m_t and m_p from b vs. β_theory(α), so that:
+      dβ_empirical/dα = m · (dβ_theory/dα).
 
     Inputs:
       alphas         : 1D array of α values (shape (N,))
@@ -950,11 +951,11 @@ def plot_dbetadalpha(
     bt_sorted = bt_data[idx]
     bp_sorted = bp_data[idx]
 
-    # (2) Compute theoretical β_theory(α) and its derivative
+    # (2) Theoretical derivative of β_theory(α)
     alphas_fine = np.linspace(a_sorted.min(), a_sorted.max(), 200)
     d_theory = -1.0 / (2.0 * (alphas_fine + 1.0)**2)
 
-    # (3) Fit linear model: b_T ≈ m_t * β_theory(a) + c_t
+    # (3) Fit linear model b_T ≈ m_t * β_theory(α) + c_t
     beta_theory_data = -((2 * a_sorted + 1) / (2 * (a_sorted + 1)))
     lr_t = LinearRegression().fit(
         beta_theory_data.reshape(-1, 1),
@@ -962,14 +963,14 @@ def plot_dbetadalpha(
     )
     m_t = float(lr_t.coef_[0, 0])
 
-    # (4) Fit linear model: b_R ≈ m_p * β_theory(a) + c_p
+    # (4) Fit linear model b_R ≈ m_p * β_theory(α) + c_p
     lr_p = LinearRegression().fit(
         beta_theory_data.reshape(-1, 1),
         bp_sorted.reshape(-1, 1)
     )
     m_p = float(lr_p.coef_[0, 0])
 
-    # (5) Empirical derivatives: dβ_empirical/dα = m * dβ_theory/dα
+    # (5) Empirical derivatives: dβ_empirical/dα = m · dβ_theory/dα
     d_fit_t = m_t * d_theory
     d_fit_p = m_p * d_theory
 
@@ -1023,3 +1024,4 @@ def plot_dbetadalpha(
     ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
     plt.tight_layout()
     plt.show()
+

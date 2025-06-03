@@ -18,7 +18,9 @@ sys.path.insert(0, SRC_DIR)
 from plotting_utils import (
     calculate_relative_errors,
     plot_relative_errors_by_perturbation,
-    plot_relative_errors_and_b_vs_perturbation
+    plot_relative_errors_and_b_vs_perturbation,
+    compute_betas_from_errors,
+    plot_beta_trends,
 )
 
 if __name__ == "__main__":
@@ -43,7 +45,7 @@ if __name__ == "__main__":
             print(f"Skipping {run_dir}: not found")
             continue
 
-        errors = calculate_relative_errors(run_dir, group_by="perturb")
+        errors = calculate_relative_errors(run_dir, scaling_param='times', group_by='perturb')
         for tkey, err_list in errors.items():
             combined_errors_by_time.setdefault(tkey, []).extend(err_list)
 
@@ -54,13 +56,19 @@ if __name__ == "__main__":
         exclude_x_scale=None,
         label_prefix="P"
     )
-
-    # 3b) Plot “β vs perturbation”
-    plot_relative_errors_and_b_vs_perturbation(
+    
+    # 2) Compute betas and their uncertainties:
+    keys, betas, beta_errs = compute_betas_from_errors(
         combined_errors_by_time,
         include_families=None,
-        exclude_x_scale=None,
-        label_prefix="P"
+        exclude_x_scale=None
+    )
+    
+    plot_beta_trends(
+        keys,
+        betas,
+        beta_errs,          # pass None if you don’t want error bars
+        label_prefix="P"    # or "α" if your keys are alpha‐values
     )
 
     print("Done plotting Figure 1 (grouped by perturbation).")
