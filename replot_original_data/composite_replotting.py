@@ -29,6 +29,8 @@ from plotting_pipelines import (
     run_derivative_pipeline
 )
 
+from plotting_utils import plot_combined_betas_vs_alpha_two_panels
+
 if __name__ == "__main__":
     # point to your three “sweep_data” folders
     sweep1_path = os.path.join(THIS_DIR, "first_parameter_sweep_data")
@@ -38,22 +40,29 @@ if __name__ == "__main__":
     # point to your “cached_errors” folder
     cache_dir   = os.path.join(THIS_DIR, "cached_errors")
 
-    # 1) Sweep 1
+    # Extending the quadratic Regime
+    # Figure 1 a) & b) (purely from Sweep 1 Data)
     run_sweep1_pipeline(sweep1_path, cache_dir)
 
-    # 2) Sweep 2 (returns (alphas_time, betas_time))
-    time_res = run_sweep2_pipeline(sweep2_path, cache_dir)
-
-    # 2a) Sweep 2 Outer
+    # From From Temporal Quadratic Sensitivity to Emergent Coherence in State Space
+    # Illustrative Example Figure 2
+    # 2a) (Single Run from Sweep 2)
     run_sweep2_outer(sweep2_path, cache_dir)
-
-    # 3) Sweep 3 (returns (alphas_pert, betas_pert))
-    pert_res = run_sweep3_pipeline(sweep3_path, cache_dir)
-
-    # 3a) Sweep 3 Outer
+    # 2b) (Single Run from Sweep 3)
     run_sweep3_outer(sweep3_path, cache_dir)
 
-    # 4) Derivative
+    # From From Temporal Quadratic Sensitivity to Emergent Coherence in State Space
+    # Sweeping alpha
+    
+    # Sweep 2 (returns (alphas_time, betas_time))
+    time_res = run_sweep2_pipeline(sweep2_path, cache_dir)
+    # Sweep 3 (returns (alphas_pert, betas_pert))
+    pert_res = run_sweep3_pipeline(sweep3_path, cache_dir)
+
+    # Figure 3a) Combines the previous two plots in a two panel figure, as in the publication.
+    plot_combined_betas_vs_alpha_two_panels(time_res, pert_res)
+    
+    # Figure 3b) Beta Derivatives
     run_derivative_pipeline(time_res, pert_res)
 
     print("All plotting complete.")

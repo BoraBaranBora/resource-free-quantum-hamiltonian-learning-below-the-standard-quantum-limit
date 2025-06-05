@@ -191,6 +191,7 @@ def compute_betas_from_errors(
     scaling_param='spreading',
     include_families: list = None,
     exclude_x_scale: set = None,
+    exclude_above_one = False,
 ):
     """
     Given:
@@ -205,7 +206,7 @@ def compute_betas_from_errors(
       1) For each (time_stamps, error_list) pair, compute ssum = round(sum(time_stamps), 8).
       2) Bucket all error values by their `key`.
       3) For each key:
-           • For each ssum (total experiment time), gather all rel_errs < 1.0.
+           • For each ssum (total experiment time), gather all errs < 1.0.
            • Compute q0 = 0th percentile of that list, q50 = 50th percentile.
              Keep only values e with q0 ≤ e ≤ q50.
            • Append (ssum, e) for each remaining e into fit_x and fit_y.
@@ -227,29 +228,33 @@ def compute_betas_from_errors(
     for time_tuple, err_list in errors_by_time.items():
         ssum = round(sum(time_tuple), 8)
 
-        # Build a temporary bucket of rel_errs per key at this ssum
+        # Build a temporary bucket of errs per key at this ssum
         bucket = {}
-        for rel_err, fam, key in err_list:
+        for err, fam, key in err_list:
             if include_families is not None and fam not in include_families:
                 continue
-            bucket.setdefault(key, []).append(rel_err)
+            bucket.setdefault(key, []).append(err)
 
-        for key, rel_errs_at_key in bucket.items():
+        for key, errs_at_key in bucket.items():
             if exclude_x_scale and (ssum in exclude_x_scale):
                 continue
 
-            # (3a) Prefilter: keep only rel_err < 1.0
+            # (3a) Prefilter: keep only err < 1.0
             if scaling_param == 'times':
-                if ssum < 2:
-                    pref = rel_errs_at_key.copy()
+                if exclude_above_one:
+                    pref = [e for e in errs_at_key if e < 1.0]
+                    if len(pref) < 2:
+                        continue
+                elif ssum < 2:
+                    pref = errs_at_key.copy()
                 else:
-                    pref = [e for e in rel_errs_at_key if e < 0.1]
+                    pref = [e for e in errs_at_key if e < 0.1]
             else:
-                #pref = rel_errs_at_key.copy()
+                #pref = errs_at_key.copy()
                 if ssum < 50:
-                    pref = rel_errs_at_key.copy()
+                    pref = errs_at_key.copy()
                 else:
-                    pref = [e for e in rel_errs_at_key if e < 0.1]
+                    pref = [e for e in errs_at_key if e < 0.1]
 
             if len(pref) < 2:
                 continue
@@ -258,8 +263,8 @@ def compute_betas_from_errors(
             q25 = np.percentile(pref, 0)   # same as min(pref)
             q75 = np.percentile(pref, 50)  # median(pref)
             filt = [e for e in pref if (q25 <= e <= q75)]
-            if len(filt) < 2:
-                continue
+            #if len(filt) < 2:
+            #    continue
 
             # (3c) Append (ssum, e) for each e in filt
             fit_data[key]["x"].extend([ssum] * len(filt))

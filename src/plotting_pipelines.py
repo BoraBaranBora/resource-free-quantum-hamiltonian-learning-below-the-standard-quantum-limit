@@ -82,7 +82,8 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
         combined_errors,
         scaling_param="times",
         include_families=None,
-        exclude_x_scale=None
+        exclude_x_scale=None,
+        exclude_above_one =True
     )
     plot_beta_trends(
         keys,
@@ -90,8 +91,18 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
         beta_errs,
         label_prefix="P"
     )
+    
+
+    # 3) Print β and its 1σ uncertainty for each spreading key
+    print("\nSpreadings & β ± δβ:")
+    for key, b, err in zip(keys, betas, beta_errs):
+        k_val = float(key) if isinstance(key, np.ndarray) else key
+        b_val = float(b) if isinstance(b, np.ndarray) else b
+        err_val = float(err) if isinstance(err, np.ndarray) else err
+        print(f"  {k_val:.3f} → {b_val:.3f} ± {err_val:.3f}")
 
     print("=== Finished Sweep 1 Pipeline ===\n")
+
 
 
 def run_sweep2_pipeline(base_time: str, cache_dir: str):
@@ -148,11 +159,21 @@ def run_sweep2_pipeline(base_time: str, cache_dir: str):
     plot_betas_vs_alpha_alternative(
         alphas=alphas_time,
         betas=betas_time,
-        beta_errs=beta_errs_time
+        beta_errs=beta_errs_time,
+        scaling_param="times",
     )
+    
+    # Print α, β, and uncertainty
+    print("Times: \nα & β(α) ± δβ:")
+    for a, b, err in zip(alphas_time, betas_time, beta_errs_time):
+        a_val = float(a) if isinstance(a, np.ndarray) else a
+        b_val = float(b) if isinstance(b, np.ndarray) else b
+        err_val = float(err) if isinstance(err, np.ndarray) else err
+        print(f"  {a_val:.3f} → {b_val:.3f} ± {err_val:.3f}")
+
 
     print("=== Finished Sweep 2 Pipeline ===\n")
-    return alphas_time, betas_time
+    return alphas_time, betas_time, beta_errs_time
 
 
 def run_sweep2_outer(base_time: str, cache_dir: str):
@@ -244,11 +265,21 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
     plot_betas_vs_alpha_alternative(
         alphas=alphas_pert,
         betas=betas_pert,
-        beta_errs=beta_errs_pert
+        beta_errs=beta_errs_pert,
+        scaling_param="spreading",
     )
+    
+    # Print α, β, and uncertainty
+    print("Spreadings :\nα & β(α) ± δβ:")
+    for a, b, err in zip(alphas_pert, betas_pert, beta_errs_pert):
+        a_val = float(a) if isinstance(a, np.ndarray) else a
+        b_val = float(b) if isinstance(b, np.ndarray) else b
+        err_val = float(err) if isinstance(err, np.ndarray) else err
+        print(f"  {a_val:.3f} → {b_val:.3f} ± {err_val:.3f}")
+
 
     print("=== Finished Sweep 3 Pipeline ===\n")
-    return alphas_pert, betas_pert
+    return alphas_pert, betas_pert, beta_errs_pert
 
 
 def run_sweep3_outer(base_pert: str, cache_dir: str):
@@ -296,8 +327,8 @@ def run_derivative_pipeline(time_res: tuple, pert_res: tuple):
         print("Skipping derivative comparison: missing data.")
         return
 
-    alphas_time, betas_time = time_res
-    alphas_pert, betas_pert = pert_res
+    alphas_time, betas_time, beta_errs_time = time_res
+    alphas_pert, betas_pert, beta_errs_pert = pert_res
 
     common_alphas = np.array(
         sorted(set(alphas_time).intersection(set(alphas_pert))),
@@ -317,4 +348,6 @@ def run_derivative_pipeline(time_res: tuple, pert_res: tuple):
         betas_time=bt_common,
         betas_spreading=bp_common
     )
+
+
 

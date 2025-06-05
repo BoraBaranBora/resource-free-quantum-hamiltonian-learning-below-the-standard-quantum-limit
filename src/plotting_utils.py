@@ -74,9 +74,9 @@ def plot_errors_by_spreadings(
             if len(pref) < 2:
                 continue
 
-            q25 = scoreatpercentile(pref, 0)
-            q75 = scoreatpercentile(pref, 50)
-            filt = [e for e in pref if (q25 <= e <= q75)]
+            q0 = scoreatpercentile(pref, 0)
+            q50 = scoreatpercentile(pref, 50)
+            filt = [e for e in pref if (q0 <= e <= q50)]
 
             fit_data.setdefault(key, {"x": [], "y": []})
             fit_data[key]["x"].extend([ssum] * len(filt))
@@ -111,17 +111,21 @@ def plot_errors_by_spreadings(
             label=f"{label_str} fit: y=({a_r}±{a_err_r}) x^{b_r}±{b_err_r}"
         )
 
-    plt.xlabel("Sum of Time Stamps (log)", fontsize=16)
+    plt.xlabel("Total Experiment Time (log)", fontsize=16)
     plt.ylabel("Error (log)", fontsize=16)
-    title_prefix = "Error vs Sum of Time Stamps"
+    title_prefix = "Error vs Total Experiment Time"
     if label_prefix == "α":
         plt.title(f"{title_prefix} (grouped by α)", fontsize=18)
     else:
-        plt.title(f"{title_prefix} (grouped by spreadingation)", fontsize=18)
+        plt.title(f"Effect of Number of Spreadings on Learning Rate", fontsize=18)
+
+    # Increase tick label sizes
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
 
     plt.grid(True, which='major', linestyle='-', linewidth=0.5, color='black', alpha=0.7)
     plt.grid(True, which='minor', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
-    plt.legend(fontsize=12)
+    #plt.legend(fontsize=12)  # Legend size is already ≥ 15 elsewhere if uncommented
     plt.tight_layout()
     plt.show()
 
@@ -236,15 +240,19 @@ def plot_beta_trends(
 
     if label_prefix == "α":
         xlabel = "α (log)"
-        plt.title("Learning Rate β vs. α", fontsize=16)
+        plt.title("Error Scaling β vs. α", fontsize=16)
     else:
-        xlabel = "spreadingation (log)"
-        plt.title("Learning Rate β vs. spreadingation", fontsize=16)
+        xlabel = "State Spreadings (log)"
+        plt.title("Error Scaling β for Number of State Spreading", fontsize=16)
 
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Learning Rate β", fontsize=14)
+    plt.xlabel(xlabel, fontsize=15)
+    plt.ylabel("Error Scaling β", fontsize=15)
 
-    plt.legend(fontsize=12)
+    # Increase tick label sizes
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+
+    plt.legend(fontsize=15)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
     plt.tight_layout()
     plt.show()
@@ -346,11 +354,11 @@ def plot_errors_for_outer(
         raise ValueError("group_by must differ from scaling_param")
 
     # Determine axis labels from scaling_param and group_by
-    inner_label = "Time Stamps" if scaling_param == "times" else "Number of Spreadings"
+    inner_label = "Total Experiment Time" if scaling_param == "times" else "Number of Spreadings"
     outer_label = {
         "alpha": "α",
-        "times": "Time Stamps",
-        "spreading": "spreadingation"
+        "times": "Total Experiment Time",
+        "spreading": "Number of Spreadings"
     }[group_by]
 
     # (1) Filter triplets where group_key == outer_value
@@ -496,12 +504,6 @@ def plot_errors_for_outer(
                 color="black", linestyle="-", linewidth=2, alpha=0.7,
                 label="SQL ∝ x⁻⁰․⁵"
             )
-            y_heis = y_fit[0] * (x_fit / x_fit[0]) ** (-1.0)
-            plt.plot(
-                x_fit, y_heis,
-                color="blue", linestyle="-", linewidth=2, alpha=0.7,
-                label="Heisenberg ∝ x⁻¹"
-            )
 
         # (8) Plot the best‐fit line and annotate uncertainties
         def _round_sig(val, err):
@@ -522,20 +524,32 @@ def plot_errors_for_outer(
             zorder=3,
             clip_on=False
         )
+        
+        if show_theory:
+            y_heis = y_fit[0] * (x_fit / x_fit[0]) ** (-1.0)
+            plt.plot(
+                x_fit, y_heis,
+                color="blue", linestyle="-", linewidth=2, alpha=0.7,
+                label="Heisenberg ∝ x⁻¹"
+            )
 
     # (9) Finalize labels and title
-    plt.xlabel(f"Sum of {inner_label} (log)", fontsize=16)
+    plt.xlabel(f"{inner_label} (log)", fontsize=16)
     plt.ylabel("Error (log)", fontsize=16)
-    plt.title(f"Error vs ∑{inner_label} ( {outer_label} = {outer_value} )", fontsize=18)
+    plt.title(f"Error vs {inner_label} ( {outer_label} = {outer_value} )", fontsize=18)
+
+    # Increase tick label sizes
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
 
     plt.grid(True, which="major", linestyle="-", linewidth=0.5, color="black", alpha=0.7)
     plt.grid(True, which="minor", linestyle="--", linewidth=0.5, color="gray", alpha=0.7)
-    plt.legend(fontsize=12, loc="best")
+    plt.legend(fontsize=15, loc="best")
     plt.tight_layout()
     plt.show()
 
 
-def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
+def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs, scaling_param: str):
     """
     Plot “β vs α” in the style of the example’s first panel:
       • A dashed line for the theoretical β_theory(α) = –((2α+1)/(2(α+1))).
@@ -547,6 +561,10 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
       betas     : 1D array of fitted exponent b for each α (shape (N,))
       beta_errs : 1D array of 1σ uncertainties in b (shape (N,))
     """
+    
+    inner_label = "Run-Time" if scaling_param == "times" else "State-Spreadings"
+    inner_label_sign = r"T" if scaling_param == "times" else "R"
+
     # 1) Filter out any NaNs so we only fit actual data points
     mask = ~np.isnan(betas)
     a_data = np.array(alphas[mask], dtype=float)
@@ -578,7 +596,7 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
         beta_theory_fine,
         '--',
         color='C0',
-        label=r'Theoretical $\beta(\alpha)$'
+        label=r'Theoretical $\beta_T(\alpha)$'
     )
 
     # 2) Error‐bar scatter of fitted b(α)
@@ -586,10 +604,15 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
         a_data,
         b_data,
         yerr=e_data,
-        fmt='s',
+        fmt='o',
         capsize=4,
-        color='C1',
-        label=r'Fitted $b(\alpha)\pm\sigma_b$'
+        ecolor='black',
+        elinewidth=1,
+        alpha=0.8,
+        markersize=8,
+        markeredgecolor='k',
+        color='C3',
+        label=fr'Fitted $\beta_{inner_label_sign}(\alpha)\pm\sigma_\beta$'
     )
 
     # 3) Solid regression fit: b_fit(α) = m·β_theory(α) + c
@@ -599,18 +622,175 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs):
         '-',
         linewidth=2,
         color='C3',
-        label=f'Linear fit: slope={m:.2f}, intercept={c:.2f}'
+        label=f'Fit'#: slope={m:.2f}, intercept={c:.2f}'
     )
 
     # Plot formatting
-    plt.xlabel(r'$\alpha$', fontsize=14)
-    plt.ylabel(r'Error‐scaling exponent $b$', fontsize=14)
-    plt.title(r'Error‐Scaling Exponent $b$ vs. $\alpha$', fontsize=16)
+    plt.xlabel(r'$\alpha$', fontsize=15)
+    plt.ylabel(r'Error‐scaling exponent $\beta$', fontsize=15)
+    plt.title(fr'{inner_label} Error‐Scaling Exponent vs. $\alpha$', fontsize=16)
+
+    # Increase tick label sizes
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+
     plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
-    plt.legend(fontsize=12, loc='best')
+    plt.legend(fontsize=15, loc='best')
     plt.tight_layout()
     plt.show()
 
+
+def plot_combined_betas_vs_alpha_two_panels(
+    time_res, pert_res
+):
+    """
+    Create a two‐panel figure:
+      • Top panel: Sweep 2 (time) “β vs α” with theoretical curve, error bars, and empirical fit.
+      • Bottom panel: Sweep 3 (spreading) “β vs α” with the same theoretical curve, error bars, and empirical fit.
+
+    Parameters
+    ----------
+    time_res : tuple or None
+        If not None, should be (alphas_time, betas_time, beta_errs_time).
+    pert_res : tuple or None
+        If not None, should be (alphas_pert, betas_pert, beta_errs_pert).
+    """
+    if (time_res is None) or (pert_res is None):
+        print("Skipping combined two‐panel plot: missing data from one of the sweeps.")
+        return
+
+    alphas_time, betas_time, beta_errs_time = time_res
+    alphas_pert, betas_pert, beta_errs_pert = pert_res
+
+    # --- 1) Filter out NaNs for each dataset ---
+    mask_time = ~np.isnan(betas_time)
+    a_time = np.array(alphas_time)[mask_time].astype(float)
+    b_time = np.array(betas_time)[mask_time].astype(float)
+    e_time = np.array(beta_errs_time)[mask_time].astype(float)
+
+    mask_pert = ~np.isnan(betas_pert)
+    a_pert = np.array(alphas_pert)[mask_pert].astype(float)
+    b_pert = np.array(betas_pert)[mask_pert].astype(float)
+    e_pert = np.array(beta_errs_pert)[mask_pert].astype(float)
+
+    if a_time.size == 0 and a_pert.size == 0:
+        print("No valid data in either Sweep 2 or Sweep 3.")
+        return
+
+    # --- 2) Build a combined α range for theoretical curve ---
+    all_alphas = np.hstack([a_time, a_pert]) if (a_time.size and a_pert.size) else (a_time if a_pert.size == 0 else a_pert)
+    amin, amax = all_alphas.min(), all_alphas.max()
+    alphas_fine = np.linspace(amin, amax, 200)
+
+    # Theoretical β(α) = –((2α+1)/(2(α+1))) for any α
+    def beta_theory(alpha_array):
+        return -((2 * alpha_array + 1) / (2 * (alpha_array + 1)))
+
+    expected_fine_neg = beta_theory(alphas_fine)
+
+    # Compute theoretical values at discrete α for fitting
+    beta_theory_time = beta_theory(a_time) if a_time.size > 0 else np.array([])
+    beta_theory_pert = beta_theory(a_pert) if a_pert.size > 0 else np.array([])
+
+    # --- 3) Fit linear models ---
+    # Sweep 2 (time)
+    if a_time.size > 0:
+        lr_time = LinearRegression()
+        lr_time.fit(beta_theory_time.reshape(-1, 1), b_time.reshape(-1, 1))
+        m_time, c_time = float(lr_time.coef_[0, 0]), float(lr_time.intercept_[0])
+        fit_t_fine = m_time * expected_fine_neg + c_time
+    else:
+        fit_t_fine = None
+
+    # Sweep 3 (spreading)
+    if a_pert.size > 0:
+        lr_pert = LinearRegression()
+        lr_pert.fit(beta_theory_pert.reshape(-1, 1), b_pert.reshape(-1, 1))
+        m_pert, c_pert = float(lr_pert.coef_[0, 0]), float(lr_pert.intercept_[0])
+        fit_p_fine = m_pert * expected_fine_neg + c_pert
+    else:
+        fit_p_fine = None
+
+    # --- 4) Create two stacked subplots ---
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 5), sharex=True)
+
+    # --- Top panel: Sweep 2 (time) ---
+    ax1.plot(
+        alphas_fine,
+        expected_fine_neg,
+        '--',
+        color='C0',
+        label=r'Theoretical $β_T(\alpha)$'
+    )
+    if a_time.size > 0:
+        ax1.errorbar(
+            a_time,
+            b_time,
+            yerr=e_time,
+            fmt='o',
+            capsize=4,
+            ecolor='black',
+            elinewidth=1,
+            alpha=0.8,
+            markersize=8,
+            markeredgecolor='k',
+            color='C3',
+            label=r'$β_T(\alpha)$ fitted for particular α`s '
+        )
+        ax1.plot(
+            alphas_fine,
+            fit_t_fine,
+            '-',
+            linewidth=2,
+            color='C3',
+            label=r'Fit: empirical $β_T(\alpha)$ trend '
+        )
+    ax1.set_ylabel(r'Error Scaling $\beta$', fontsize=15)
+    ax1.set_title('Run-time Error Scaling vs α', fontsize=16)
+    ax1.legend(fontsize=12, loc='best')
+    ax1.grid(True)
+    ax1.tick_params(axis='both', labelsize=15)
+
+    # --- Bottom panel: Sweep 3 (spreading) ---
+    ax2.plot(
+        alphas_fine,
+        expected_fine_neg,
+        '--',
+        color='C0',
+        label=r'Theoretical $β_T(\alpha)$'
+    )
+    if a_pert.size > 0:
+        ax2.errorbar(
+            a_pert,
+            b_pert,
+            yerr=e_pert,
+            fmt='o',
+            capsize=4,
+            ecolor='black',
+            elinewidth=1,
+            alpha=0.8,
+            markersize=8,
+            markeredgecolor='k',
+            color='C4',
+            label='β(R) fitted for particular α`s '
+        )
+        ax2.plot(
+            alphas_fine,
+            fit_p_fine,
+            '-',
+            linewidth=2,
+            color='C4',
+            label='Fit: empirical β(R) trend  '
+        )
+    ax2.set_xlabel('α', fontsize=15)
+    ax2.set_ylabel(r'Error Scaling $\beta$', fontsize=15)
+    ax2.set_title('State-Spreading Error Scaling vs α', fontsize=16)
+    ax2.legend(fontsize=12, loc='best')
+    ax2.grid(True)
+    ax2.tick_params(axis='both', labelsize=15)
+
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_dbetadalpha(
@@ -689,7 +869,7 @@ def plot_dbetadalpha(
         '-',
         linewidth=2,
         color='C3',
-        label=f"{label_time} (slope={m_t:.2f})"
+        label=f"{label_time} "#(slope={m_t:.2f})"
     )
 
     # (6c) Empirical spreading‐scaling derivative (solid, C4)
@@ -699,7 +879,7 @@ def plot_dbetadalpha(
         '-',
         linewidth=2,
         color='C4',
-        label=f"{label_spreading} (slope={m_p:.2f})"
+        label=f"{label_spreading} "#(slope={m_p:.2f})"
     )
 
     # (6d) ±band around time‐scaling derivative if requested
@@ -710,13 +890,17 @@ def plot_dbetadalpha(
             d_fit_t + band_half_width,
             color='C3',
             alpha=0.3,
-            label=r'$\pm\,\frac{1}{16}$ around Empirical $d\beta_T/d\alpha$'
+            label=r'$\pm\,(\Omega(m_t^{-1}))/2$ around Empirical $d\beta_T/d\alpha$'
         )
 
-    ax.set_xlabel(r'Scheduling exponent $\alpha$', fontsize=14)
-    ax.set_ylabel(r'Sensitivity $dβ/dα$', fontsize=14)
+    ax.set_xlabel(r'Scheduling exponent $\alpha$', fontsize=15)
+    ax.set_ylabel(r'Sensitivity $dβ/dα$', fontsize=15)
     ax.set_title(r'Derivative of Scaling Exponents vs. $\alpha$', fontsize=16)
-    ax.legend(loc='best', frameon=True)
+
+    # Increase tick label sizes
+    ax.tick_params(axis='both', labelsize=15)
+
+    ax.legend(loc='best', frameon=True, fontsize=13)
     ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
     plt.tight_layout()
     plt.show()
