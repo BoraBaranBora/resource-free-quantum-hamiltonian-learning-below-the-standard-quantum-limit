@@ -167,7 +167,7 @@ def collect_recovery_errors_from_data(
 
             with torch.no_grad():
                 out_flat = predictor(batch_size=1).squeeze(0)
-                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0
+                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0 # rescale, because loss had factor of 0.25
                 error = torch.mean((rec_matrix - original_ham).abs()).item()
 
             # ─── Decide the group_key based on group_by ───
