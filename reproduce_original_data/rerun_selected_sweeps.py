@@ -177,9 +177,30 @@ composite_plotting.py is configured to show them (usually displayed to screen
 or saved by your own modifications).
 """
 
+#!/usr/bin/env python3
+"""
+rerun_selected_sweeps.py
+
+This script controls which data‐generation sweeps to execute, by toggling
+three boolean flags at the top.  Each sweep invokes learn_hamiltonian.py
+with a particular set of command‐line arguments.  As a result, for each
+‘sweep’ we create a directory tree that looks like:
+
+    <base_folder>/
+      run_<SWEEP_IDENTIFIER>/
+        alpha_<…>_spreading_<…>_measurements_<…>_shots_<…>_steps_<…>/
+          config.json
+          hamiltonians.json
+          embedding_<codename>.pth
+          embedding_<codename>_loss.json
+          …
+
+Each reproduction function now takes an extra `families` string so you can
+select which Hamiltonian families to sweep without changing reproduction_pipelines.py.
+"""
+
 import sys
 import os
-import numpy as np
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR  = os.path.abspath(os.path.join(THIS_DIR, "..", "src"))
@@ -196,29 +217,26 @@ from reproduction_pipelines import (
 #   to be re‐built from scratch by calling learn_hamiltonian.py.  If False,
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
-run_sweep1 = True    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
-run_sweep2 = False   # SWEEP 2: α‐sweep (spreading=50), measurements=25
-run_sweep3 = False   # SWEEP 3: nested α+spreading, measurements=25
+run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
+run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=50), measurements=25
+run_sweep3 = True     # SWEEP 3: nested α+spreading, measurements=25
+
+# ───────────────────────────────────────────────────────────────────────────────
+#   Specify which families to sweep (comma‐separated list).  For example:
+#     "Heisenberg", "XYZ2", "Heisenberg3,XYZ2", etc.
+# ───────────────────────────────────────────────────────────────────────────────
+chosen_families = "XYZ2, XYZ3" #"Heisenberg"
 # ───────────────────────────────────────────────────────────────────────────────
 
 
 def main():
     """
     Main entry.  Checks three Boolean flags and calls the appropriate
-    reproduction function(s).  Each function writes into a “base_folder”
-    (creating it if necessary), then within that folder creates subfolders 
-    named run_SWEEP1_…, run_SWEEP2_…, or run_SWEEP3_… respectively.
-
-    After running this script, you should see three top‐level directories:
-      • first_parameter_sweep_data/
-      • second_parameter_sweep_data/
-      • third_parameter_sweep_data/
-
-    Inside each, a collection of “run_…” subfolders, each containing all
-    the combo directories learn_hamiltonian.py generated.
+    reproduction function(s), passing along the `chosen_families` string.
+    Each function writes into a “base_folder” (creating it if necessary),
+    then within that folder creates subfolders named run_SWEEP1_…,
+    run_SWEEP2_…, or run_SWEEP3_… respectively.
     """
-    THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
     # Define the three top‐level destinations where each sweep’s “run_…” folders live:
     first_folder  = os.path.join(THIS_DIR, "first_parameter_sweep_data")
     second_folder = os.path.join(THIS_DIR, "second_parameter_sweep_data")
@@ -226,15 +244,15 @@ def main():
 
     if run_sweep1:
         print("→ Generating SWEEP 1 data (spreading sweep, measurements=50)…")
-        reproduce_data_SWEEP1(first_folder)
+        reproduce_data_SWEEP1(first_folder, chosen_families)
 
     if run_sweep2:
         print("→ Generating SWEEP 2 data (α sweep, measurements=25)…")
-        reproduce_data_SWEEP2(second_folder)
+        reproduce_data_SWEEP2(second_folder, chosen_families)
 
     if run_sweep3:
         print("→ Generating SWEEP 3 data (nested α+spreading, measurements=25)…")
-        reproduce_data_SWEEP3(third_folder)
+        reproduce_data_SWEEP3(third_folder, chosen_families)
 
     print("\nrun_selected.py finished. Check these directories for generated data:")
     print("  ", first_folder)

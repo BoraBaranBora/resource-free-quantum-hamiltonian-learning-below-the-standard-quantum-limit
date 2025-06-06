@@ -3,12 +3,13 @@
 reproduction_pipelines.py
 
 Contains three functions to re‐generate data sweeps:
-  • reproduce_data_SWEEP1(base_folder)
-  • reproduce_data_SWEEP2(base_folder)
-  • reproduce_data_SWEEP3(base_folder)
+  • reproduce_data_SWEEP1(base_folder, families)
+  • reproduce_data_SWEEP2(base_folder, families)
+  • reproduce_data_SWEEP3(base_folder, families)
 
 Each “base_folder” argument is a path where subfolders named run_SWEEP1_…,
-run_SWEEP2_…, or run_SWEEP3_… will be created.  No toggles or booleans here.
+run_SWEEP2_…, or run_SWEEP3_… will be created.  The `families` string is 
+passed through to learn_hamiltonian.py.
 """
 
 import os
@@ -27,13 +28,7 @@ STEPS               = 8
 
 # Sweep lists
 SPREADINGS = [1, 10, 25, 50, 100, 250, 500]
-ALPHAS     = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-# ——————————————
-# NEW: Define the families you want to sweep.
-# Change this string if you later want multiple families, e.g. "Heisenberg,XXZ,TFIM".
-FAMILIES = "Heisenberg"
-# ——————————————
+ALPHAS     = [1.0]  # [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 
 def run(cmd):
@@ -42,7 +37,7 @@ def run(cmd):
     subprocess.run(cmd, check=True)
 
 
-def reproduce_data_SWEEP1(base_folder: str):
+def reproduce_data_SWEEP1(base_folder: str, families: str):
     """
     Sweep over parameter combinations for SWEEP 1 (measurements=50).
     Creates subfolders run_SWEEP1_spreading_<p>/ under base_folder.
@@ -62,12 +57,12 @@ def reproduce_data_SWEEP1(base_folder: str):
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
-            "--families",     FAMILIES,                   # <— NEW
+            "--families",     families,                   # now passed in
             "--output-dir",   outdir
         ])
 
 
-def reproduce_data_SWEEP2(base_folder: str):
+def reproduce_data_SWEEP2(base_folder: str, families: str):
     """
     Sweep over parameter combinations for SWEEP 2 (measurements=25).
     Creates subfolders run_SWEEP2_alpha_<α>/ under base_folder.
@@ -87,12 +82,12 @@ def reproduce_data_SWEEP2(base_folder: str):
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
-            "--families",     FAMILIES,                   # <— NEW
+            "--families",     families,                   # now passed in
             "--output-dir",   outdir
         ])
 
 
-def reproduce_data_SWEEP3(base_folder: str):
+def reproduce_data_SWEEP3(base_folder: str, families: str):
     """
     Sweep over parameter combinations for SWEEP 3 (measurements=25).
     Creates subfolders run_SWEEP3_alpha_<α>/ under base_folder.
@@ -112,6 +107,6 @@ def reproduce_data_SWEEP3(base_folder: str):
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        str(STEPS),                  # exactly 8 steps
-            "--families",     FAMILIES,                   # <— NEW
+            "--families",     families,                   # now passed in
             "--output-dir",   outdir
         ])
