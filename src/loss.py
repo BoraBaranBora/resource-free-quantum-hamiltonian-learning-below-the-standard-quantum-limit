@@ -100,25 +100,16 @@ class Loss(nn.Module):
         return torch.cat([lower_real, lower_imag], dim=-1)
 
     def reconstruct_density_matrix_from_lower(self, flattened_vectors):
-        """
-        Reconstruct a Hermitian matrix from its lower‐triangular entries.
-        - flattened_vectors: (batch_size, L) where L = dim*(dim+1)/2 * 2 (real+imag)
-        Returns: (batch_size, dim, dim) complex Hermitian matrices on same device.
-        """
-        batch_size, L = flattened_vectors.size()
-        device = flattened_vectors.device
-        # Solve dim*(dim+1)/2 * 2 = L  →  dim*(dim+1) = L
-        dim = int(((-1 + (1 + 4 * L) ** 0.5) / 2).real)
-        indices = torch.tril_indices(dim, dim, device=device)
+        """Reconstruct a symmetric matrix from the lower triangular part."""
+        batch_size, flattened_length = flattened_vectors.size()
+        d = int(((-1 + (1 + 8 * flattened_length)**0.5) / 2).real)  # Solve for dimension size
+        indices = torch.tril_indices(d, d, device=flattened_vectors.device)
 
-        real_part = flattened_vectors[:, : indices.shape[1]]
-        imag_part = flattened_vectors[:, indices.shape[1] :]
+        matrix = torch.zeros(batch_size, d, d, device=flattened_vectors.device)
+        matrix[:, indices[0], indices[1]] = flattened_vectors
+        matrix[:, indices[1], indices[0]] = flattened_vectors  # Ensure symmetry
 
-        # Build empty rho
-        rho = torch.zeros((batch_size, dim, dim), dtype=torch.complex64, device=device)
-        rho[:, indices[0], indices[1]] = real_part + 1j * imag_part
-        rho[:, indices[1], indices[0]] = real_part - 1j * imag_part
-        return rho
+        return matrix
 
     def get_state_prediction(self, predictor, initial_state, time):
         """
