@@ -15,6 +15,7 @@ passed through to learn_hamiltonian.py.
 import os
 import subprocess
 from tqdm import tqdm
+import sys
 
 # Path to your demo script
 DEMOPATH = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +33,7 @@ ALPHAS     = [1.0]  # [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 
 def run(cmd):
-    """Helper to print and execute a subprocess command."""
+    """Helper to print and execute a subprocess command using the same Python interpreter."""
     print(">>>", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
@@ -51,7 +52,7 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
         os.makedirs(outdir, exist_ok=True)
 
         run([
-            "python", DEMO,
+            sys.executable, DEMO,
             "--alphas",       "1.0",                      # fixed α
             "--spreadings",   str(spread),                # sweep this spreading
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
@@ -76,7 +77,7 @@ def reproduce_data_SWEEP2(base_folder: str, families: str):
         os.makedirs(outdir, exist_ok=True)
 
         run([
-            "python", DEMO,
+            sys.executable, DEMO,
             "--alphas",       str(alpha),                 # sweep this α
             "--spreadings",   "50",                       # fixed spreading = 50
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
@@ -101,7 +102,7 @@ def reproduce_data_SWEEP3(base_folder: str, families: str):
         os.makedirs(outdir, exist_ok=True)
 
         run([
-            "python", DEMO,
+            sys.executable, DEMO,
             "--alphas",       str(alpha),                 # sweep this α
             "--spreadings",   spreading_list,             # sweep all SPREADINGS internally
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
