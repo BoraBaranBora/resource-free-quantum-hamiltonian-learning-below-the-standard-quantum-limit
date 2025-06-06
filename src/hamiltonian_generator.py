@@ -160,8 +160,9 @@ def generate_hamiltonian(
         raise ValueError(f"Unknown base family '{base_name}' in generate_hamiltonian.")
 
     dim = 2 ** num_qubits
-    H = torch.zeros((dim, dim), dtype=torch.complex64)
-
+    device = params.get("device", torch.device("cpu"))
+    H = torch.zeros((dim, dim), dtype=torch.complex64, device=device)
+    
     # Pauli matrices
     sigma_x = torch.tensor([[0, 1], [1, 0]], dtype=torch.complex64)
     sigma_y = torch.tensor([[0, -1j], [1j, 0]], dtype=torch.complex64)
