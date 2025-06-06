@@ -27,7 +27,13 @@ STEPS               = 8
 
 # Sweep lists
 SPREADINGS = [1, 10, 25, 50, 100, 250, 500]
-ALPHAS   = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+ALPHAS     = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+# ——————————————
+# NEW: Define the families you want to sweep.
+# Change this string if you later want multiple families, e.g. "Heisenberg,XXZ,TFIM".
+FAMILIES = "Heisenberg"
+# ——————————————
 
 
 def run(cmd):
@@ -52,10 +58,11 @@ def reproduce_data_SWEEP1(base_folder: str):
         run([
             "python", DEMO,
             "--alphas",       "1.0",                      # fixed α
-            "--spreadings",     str(spread),                  # sweep this spreadings
+            "--spreadings",   str(spread),                # sweep this spreading
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
+            "--families",     FAMILIES,                   # <— NEW
             "--output-dir",   outdir
         ])
 
@@ -76,10 +83,11 @@ def reproduce_data_SWEEP2(base_folder: str):
         run([
             "python", DEMO,
             "--alphas",       str(alpha),                 # sweep this α
-            "--spreadings",     "50",                       # fixed spreadings = 50
+            "--spreadings",   "50",                       # fixed spreading = 50
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
+            "--families",     FAMILIES,                   # <— NEW
             "--output-dir",   outdir
         ])
 
@@ -100,10 +108,10 @@ def reproduce_data_SWEEP3(base_folder: str):
         run([
             "python", DEMO,
             "--alphas",       str(alpha),                 # sweep this α
-            "--spreadings",     spreading_list,               # sweep all SPREADINGS internally
+            "--spreadings",   spreading_list,             # sweep all SPREADINGS internally
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        str(STEPS),                  # exactly 8 steps
+            "--families",     FAMILIES,                   # <— NEW
             "--output-dir",   outdir
         ])
-

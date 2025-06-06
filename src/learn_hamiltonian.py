@@ -3,7 +3,7 @@
 learn_hamiltonian.py
 
 Demo: recover Hamiltonians while sweeping arbitrary hyperparameters.
-Any combination of alpha, spreadings, measurements, shots, steps can be provided.
+Any combination of alpha, spreadings, measurements, shots, steps, and families can be provided.
 """
 import os
 import sys
@@ -107,6 +107,8 @@ def main():
                    help="Comma‐separated shots, e.g. 1,5")
     p.add_argument("--steps",        required=True,
                    help="Comma‐separated N (time‐step counts), e.g. 5,8,12")
+    p.add_argument("--families",     required=True,
+                   help="Comma‐separated Hamiltonian families, e.g. Heisenberg,XXZ,TFIM")
 
     # Fixed settings
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
@@ -127,26 +129,29 @@ def main():
         "shots":        [int(x)   for x in args.shots.split(",")],
         "steps":        [int(x)   for x in args.steps.split(",")],
     }
+    # Parse families as list of strings (stripping whitespace)
+    fixed_families = [fam.strip() for fam in args.families.split(",") if fam.strip()]
 
     # Fixed run settings
     fixed = {
-        "num_qubits":    args.num_qubits,
-        "per_family":    args.per_family,
-        "epochs":        args.epochs,
-        "window":        args.window,
-        "tolerance":     args.tolerance,
-        "delta_t":       args.delta_t,
-        "families":      ["Heisenberg"],
-        "coupling_type": "anisotropic_normal",
-        "h_field_type":  "random",
-        "include_transverse": True,
-        "include_higher_order": 0,
-        "hidden_layers": [200, 200, 200],
-        "ACTIVATION":    nn.Tanh,
-        "nn_seed":       99901,
-        "device":        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        "num_qubits":          args.num_qubits,
+        "per_family":          args.per_family,
+        "epochs":              args.epochs,
+        "window":              args.window,
+        "tolerance":           args.tolerance,
+        "delta_t":             args.delta_t,
+        "families":            fixed_families,
+        "coupling_type":       "anisotropic_normal",
+        "h_field_type":        "random",
+        "include_transverse":  True,
+        #"include_higher_order":0,
+        "hidden_layers":       [200, 200, 200],
+        "ACTIVATION":          nn.Tanh,
+        "nn_seed":             99901,
+        "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     }
     print(f"Using device: {fixed['device']}")
+    print(f"Sweeping families: {fixed['families']}")
 
     # Prepare top‐level run folder
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
