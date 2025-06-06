@@ -36,6 +36,25 @@ def run(cmd):
     """Helper to print and execute a subprocess command using the same Python interpreter."""
     print(">>>", " ".join(cmd))
     subprocess.run(cmd, check=True)
+    
+def run(cmd):
+    """Helper to print and execute a subprocess command using the same Python interpreter."""
+    print(">>>", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    # Print the subprocess's stdout
+    if result.stdout:
+        print(result.stdout, end="")
+    # If it failed, print stderr and raise
+    if result.returncode != 0:
+        print(f"ERROR: subprocess exited with code {result.returncode}", file=sys.stderr)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        result.check_returncode()
 
 
 def reproduce_data_SWEEP1(base_folder: str, families: str):
