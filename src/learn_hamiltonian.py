@@ -25,6 +25,7 @@ from predictor import Predictor
 from loss import Loss
 from utils import convert_to_serializable, generate_advanced_codified_name
 
+
 def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     hilbert_dim = 2 ** num_qubits
     density_mb = (hilbert_dim**2) * 16 / (1024**2)
@@ -32,13 +33,16 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     per_batch  = 3 * density_mb
     return int((avail_mb // per_batch) * 0.95 // 50 * 50)
 
+
 def generate_times(alpha, N, delta_t):
     return [delta_t * (k**alpha) for k in range(1, N+1)]
+
 
 def save_json(obj, path):
     clean = convert_to_serializable(obj)
     with open(path, 'w') as f:
         json.dump(clean, f, indent=4)
+
 
 def run_single_run(run_root, params, fixed):
     """
@@ -94,6 +98,7 @@ def run_single_run(run_root, params, fixed):
 
     return subdir, ham_list, current_times
 
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     # These flags can be comma‐lists
@@ -144,7 +149,6 @@ def main():
         "coupling_type":       "anisotropic_normal",
         "h_field_type":        "random",
         "include_transverse":  True,
-        #"include_higher_order":0,
         "hidden_layers":       [200, 200, 200],
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
@@ -187,9 +191,11 @@ def main():
                 "ham": f"{idx}/{total_hams}"
             })
 
+            # Pass `device` explicitly to generate_hamiltonian
             H = generate_hamiltonian(
                 family=info["family"],
                 num_qubits=fixed["num_qubits"],
+                device=fixed["device"],        # ← added
                 **info["params"]
             )
 
@@ -214,13 +220,16 @@ def main():
             torch.manual_seed(fixed["nn_seed"])
             d = 2 ** fixed["num_qubits"]
             tri_len = d * (d + 1) // 2
+
+            # Pass `device` to Predictor so it creates tensors on CUDA
             predictor = Predictor(
                 input_size=tri_len,
                 output_size=tri_len,
                 hidden_layers=fixed["hidden_layers"],
                 activation_fn=fixed["ACTIVATION"],
-                ignore_input=True
-            ).to(fixed["device"])
+                ignore_input=True,
+                device=fixed["device"]             # ← added
+            )
             criterion = Loss(num_qubits=fixed["num_qubits"])
             optimizer = optim.AdamW(predictor.parameters())
 
@@ -259,6 +268,7 @@ def main():
         overall.update()
 
     print("All sweeps completed.")
+
 
 if __name__ == "__main__":
     main()

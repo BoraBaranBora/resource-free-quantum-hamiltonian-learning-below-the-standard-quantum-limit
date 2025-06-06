@@ -135,6 +135,7 @@ def generate_hamiltonian_parameters(
 def generate_hamiltonian(
     family: str,
     num_qubits: int,
+    device: torch.device,
     **params
 ) -> torch.Tensor:
     """
@@ -160,14 +161,13 @@ def generate_hamiltonian(
         raise ValueError(f"Unknown base family '{base_name}' in generate_hamiltonian.")
 
     dim = 2 ** num_qubits
-    device = params.get("device", torch.device("cpu"))
     H = torch.zeros((dim, dim), dtype=torch.complex64, device=device)
     
-    # Pauli matrices
-    sigma_x = torch.tensor([[0, 1], [1, 0]], dtype=torch.complex64)
-    sigma_y = torch.tensor([[0, -1j], [1j, 0]], dtype=torch.complex64)
-    sigma_z = torch.tensor([[1, 0], [0, -1]], dtype=torch.complex64)
-    identity = torch.eye(2, dtype=torch.complex64)
+    # Pauli matrices on the correct device
+    sigma_x = torch.tensor([[0, 1], [1, 0]], dtype=torch.complex64, device=device)
+    sigma_y = torch.tensor([[0, -1j], [1j, 0]], dtype=torch.complex64, device=device)
+    sigma_z = torch.tensor([[1, 0], [0, -1]], dtype=torch.complex64, device=device)
+    identity = torch.eye(2, dtype=torch.complex64, device=device)
 
     # ――― 2) Extract J, h_x, h_y, h_z, K, L from params ―――
     J   = np.array(params["J"])                        # shape (num_qubits, 3)
@@ -179,7 +179,6 @@ def generate_hamiltonian(
 
     # ――― 3) Nearest‐neighbor Heisenberg/XYZ (i,i+1) block ―――
     for i in range(num_qubits - 1):
-        # build XX_{i,i+1}, YY_{i,i+1}, ZZ_{i,i+1}
         tx = [identity] * num_qubits
         tx[i] = sigma_x
         tx[i + 1] = sigma_x
@@ -205,14 +204,11 @@ def generate_hamiltonian(
 
     # ――― 5) If include_higher_order ≥ 2, also add on‐site Y & Z fields ―――
     if include_higher_order >= 2:
-        # add ∑ₙ h_y[n]·σₙʸ
         if h_y is not None:
             for i in range(num_qubits):
                 term = [identity] * num_qubits
                 term[i] = sigma_y
                 H += h_y[i] * apply_kron(term)
-
-        # add ∑ₙ h_z[n]·σₙᶻ
         if h_z is not None:
             for i in range(num_qubits):
                 term = [identity] * num_qubits
