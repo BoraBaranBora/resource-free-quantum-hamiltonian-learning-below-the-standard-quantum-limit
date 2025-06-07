@@ -26,7 +26,6 @@ from loss import Loss
 from utils import convert_to_serializable, generate_advanced_codified_name
 
 
-# Original
 def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     hilbert_dim = 2 ** num_qubits
     density_mb  = (hilbert_dim**2) * 16 / (1024**2)
@@ -155,7 +154,7 @@ def main():
         "hidden_layers":       [200, 200, 200],
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
-        "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        "device":              torch.device("cpu"), # torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     }
     print(f"Using device: {fixed['device']}")
     print(f"Sweeping families: {fixed['families']}")
@@ -185,19 +184,13 @@ def main():
         # Create subdir and ham_list
         subdir, ham_list, current_times = run_single_run(run_root, params, fixed)
         total_hams = len(ham_list)
-        
-        print(f'current times:{current_times}')
-        
-        batch_size = get_max_batch_size(fixed["num_qubits"])
 
         # Train each Hamiltonian in this combo
         for idx, info in enumerate(ham_list, start=1):
             overall.set_postfix({
                 "α": f"{alpha:.3f}",
                 "spread": spreading,
-                "ham": f"{idx}/{total_hams}",
-                "ham":      f"{idx}/{total_hams}",
-                "batchsize":    batch_size
+                "ham": f"{idx}/{total_hams}"
             })
 
             H = generate_hamiltonian(
