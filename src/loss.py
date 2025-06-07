@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class Loss(nn.Module):
-    def __init__(self, num_qubits, downscaling=0.25):
+    def __init__(self, num_qubits, downscaling=1.0):
         super(Loss, self).__init__()
         
         self.num_qubits = num_qubits

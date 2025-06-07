@@ -18,7 +18,7 @@ from hamiltonian_generator import generate_hamiltonian
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def generate_times(alpha, N, delta_t):
-    return [0.0] + [delta_t * (k**alpha) for k in range(1, N+1)]
+    return [delta_t * (k**alpha) for k in range(1, N+1)]
 
 
 def reconstruct_density_matrix_from_lower(flattened_vector: torch.Tensor) -> torch.Tensor:
@@ -199,7 +199,7 @@ def collect_recovery_errors_from_data(
             
             with torch.no_grad():
                 out_flat = predictor(batch_size=1).squeeze(0)
-                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0 # rescale, because loss had factor of 0.25
+                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 1.0 # rescale, because loss had factor of 0.25
                 error = torch.mean((rec_matrix - original_ham).abs()).item()
 
             # ─── Decide the group_key based on group_by ───
