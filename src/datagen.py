@@ -199,7 +199,7 @@ class DataGen(Dataset):
                             ]
                             basis_list.append(basis_indices)
                             targets_list.append(int(shot_idx))
-                            initial_states_list.append(initial_state)
+                            initial_states_list.append(spread_state)
 
         # Convert lists into tensors
         times_tensor = torch.tensor(times_list, dtype=torch.float32, device=self.device)
@@ -236,7 +236,7 @@ class DataGen(Dataset):
 
 
 
-class DataGen(Dataset):
+class DataGenOld(Dataset):
     def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=1, perturbation_depth=1, hamiltonian=None):
         self.times = np.array(times[:], dtype=np.float64).flatten()
         self.num_measurements = num_measurements
