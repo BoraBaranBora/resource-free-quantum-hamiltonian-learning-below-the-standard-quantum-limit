@@ -121,7 +121,7 @@ def main():
     # Fixed settings
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
-    p.add_argument("--epochs",       type=int, default=500, help="Training epochs")
+    p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=10,  help="Early‐stop window")
     p.add_argument("--tolerance",    type=float, default=1e-5, help="Convergence tolerance")
     p.add_argument("--delta-t",      type=float, default=0.1,  help="Δt for time steps")
@@ -185,13 +185,17 @@ def main():
         # Create subdir and ham_list
         subdir, ham_list, current_times = run_single_run(run_root, params, fixed)
         total_hams = len(ham_list)
+        
+        batch_size = get_max_batch_size(fixed["num_qubits"])
 
         # Train each Hamiltonian in this combo
         for idx, info in enumerate(ham_list, start=1):
             overall.set_postfix({
                 "α": f"{alpha:.3f}",
                 "spread": spreading,
-                "ham": f"{idx}/{total_hams}"
+                "ham": f"{idx}/{total_hams}",
+                "ham":      f"{idx}/{total_hams}",
+                "batchsize":    batch_size
             })
 
             H = generate_hamiltonian(
