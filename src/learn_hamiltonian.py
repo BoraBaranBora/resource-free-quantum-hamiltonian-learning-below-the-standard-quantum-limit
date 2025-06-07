@@ -34,6 +34,36 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     return int((avail_mb // per_batch) * 0.95 // 50 * 50)
 
 
+
+def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
+    """
+    Calculate the maximal batch size based on the number of qubits.
+
+    Parameters:
+        num_qubits (int): Number of qubits.
+        gpu_memory_gb (int): Total GPU memory in GB (default: 24 for NVIDIA RTX 4090).
+        memory_overhead_gb (int): Memory reserved for system and overhead in GB (default: 2 GB).
+
+    Returns:
+        int: Maximal batch size.
+    """
+    # Total Hilbert space dimension
+    hilbert_dim = 2 ** num_qubits
+
+    # Size of a single density matrix (complex64, 16 bytes per entry)
+    density_matrix_size_mb = (hilbert_dim ** 2) * 16 / (1024 ** 2)  # Convert bytes to MB
+
+    # Available GPU memory for batch processing (in MB)
+    available_memory_mb = (gpu_memory_gb - memory_overhead_gb) * 1024
+
+    # Assume 3 copies of the density matrix in memory (forward, intermediate, backward)
+    effective_memory_per_batch_mb = 3 * density_matrix_size_mb
+
+    # Calculate the maximal batch size
+    max_batch_size = int(available_memory_mb // effective_memory_per_batch_mb)
+
+    return max_batch_size
+
 def generate_times(alpha, N, delta_t):
     return [delta_t * (k**alpha) for k in range(1, N+1)]
 
