@@ -42,27 +42,27 @@ if __name__ == "__main__":
 
     # Extending the quadratic Regime
     # Figure 1 a) & b) (purely from Sweep 1 Data)
-    run_sweep1_pipeline(sweep1_path, cache_dir)
+    #run_sweep1_pipeline(sweep1_path, cache_dir)
 
     # From From Temporal Quadratic Sensitivity to Emergent Coherence in State Space
     # Illustrative Example Figure 2
     # 2a) (Single Run from Sweep 2)
     run_sweep2_outer(sweep2_path, cache_dir)
     # 2b) (Single Run from Sweep 3)
-    run_sweep3_outer(sweep3_path, cache_dir)
+    #run_sweep3_outer(sweep3_path, cache_dir)
 
     # From From Temporal Quadratic Sensitivity to Emergent Coherence in State Space
     # Sweeping alpha
     
     # Sweep 2 (returns (alphas_time, betas_time))
-    time_res = run_sweep2_pipeline(sweep2_path, cache_dir)
+    #time_res = run_sweep2_pipeline(sweep2_path, cache_dir)
     # Sweep 3 (returns (alphas_pert, betas_pert))
-    pert_res = run_sweep3_pipeline(sweep3_path, cache_dir)
+    #pert_res = run_sweep3_pipeline(sweep3_path, cache_dir)
 
     # Figure 3a) Combines the previous two plots in a two panel figure, as in the publication.
-    plot_combined_betas_vs_alpha_two_panels(time_res, pert_res)
+    #plot_combined_betas_vs_alpha_two_panels(time_res, pert_res)
     
     # Figure 3b) Beta Derivatives
-    run_derivative_pipeline(time_res, pert_res)
+    #run_derivative_pipeline(time_res, pert_res)
 
     print("All plotting complete.")

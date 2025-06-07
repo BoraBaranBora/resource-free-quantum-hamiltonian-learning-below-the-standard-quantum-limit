@@ -14,6 +14,12 @@ from sklearn.linear_model import LinearRegression
 from predictor import Predictor
 from hamiltonian_generator import generate_hamiltonian
 
+# Detect device once for all operations
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def generate_times(alpha, N, delta_t):
+    return [0.0] + [delta_t * (k**alpha) for k in range(1, N+1)]
+
 
 def reconstruct_density_matrix_from_lower(flattened_vector: torch.Tensor) -> torch.Tensor:
     """
@@ -75,12 +81,30 @@ def collect_recovery_errors_from_data(
             meta_params = json.load(f)
 
         # ─── Extract times (for "times" grouping or grouping by time) ───
+        #raw_times = meta_params.get("times", None)
+        #if raw_times is None or not isinstance(raw_times, (list, tuple)) or len(raw_times) == 0:
+        #    print(f"Skipping {combo_folder}: config.json has no valid 'times' list.")
+        #    continue
+        #time_values = list(raw_times)       # e.g. [0.0, 0.5, 1.0]
+        #time_tuple  = tuple(time_values)
+                
+        # ─── Extract alpha ───
+        alpha = meta_params.get("alpha", None)
+        
+        # ─── Extract times, falling back to generate_times if missing ───
         raw_times = meta_params.get("times", None)
-        if raw_times is None or not isinstance(raw_times, (list, tuple)) or len(raw_times) == 0:
-            print(f"Skipping {combo_folder}: config.json has no valid 'times' list.")
-            continue
-        time_values = list(raw_times)       # e.g. [0.0, 0.5, 1.0]
-        time_tuple  = tuple(time_values)
+        
+        if isinstance(raw_times, (list, tuple)) and len(raw_times) > 0:
+            time_values = list(raw_times)
+        else:
+            # fallback: build times=[0.0, δt*1**α, …, δt*N**α]
+            steps = meta_params.get("steps", None)
+            delta_t = meta_params.get("delta_t", None)
+
+            print(f"No valid 'times' in {combo_folder}; generating with α={alpha:.3f}, steps={steps}, δt={delta_t}")
+            time_values = generate_times(alpha, steps, delta_t)
+
+        time_tuple = tuple(time_values)
 
         # ─── Extract spreading (for "spreading" grouping or grouping by spreading) ───
         raw_spreading = meta_params.get("spreading", None)
@@ -95,8 +119,7 @@ def collect_recovery_errors_from_data(
             spreading_values = [raw_spreading]
         spreading_tuple = tuple(spreading_values)
 
-        # ─── Extract alpha ───
-        alpha = meta_params.get("alpha", None)
+
 
         num_qubits = meta_params.get("num_qubits", 5)
 
@@ -157,14 +180,23 @@ def collect_recovery_errors_from_data(
                 output_size   = output_size,
                 hidden_layers = hidden_layers,
                 activation_fn = activation_fn,
-                ignore_input  = True
+                ignore_input  = True,
+                device        = device
             )
-            predictor.load_state_dict(torch.load(model_path))
-            predictor.eval()
+            #predictor.load_state_dict(torch.load(model_path))
+            #predictor.eval()
+            
+            state = torch.load(model_path, map_location=device)
+            predictor.load_state_dict(state)
 
             # Generate the “true” Hamiltonian matrix once
-            original_ham = generate_hamiltonian(true_family, num_qubits, **ham_parameters)
-
+            original_ham =  generate_hamiltonian(
+                true_family,
+                num_qubits,
+                device=device,
+                **ham_parameters
+            ).to(torch.complex64).to(device)
+            
             with torch.no_grad():
                 out_flat = predictor(batch_size=1).squeeze(0)
                 rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0 # rescale, because loss had factor of 0.25
@@ -280,6 +312,10 @@ def compute_betas_from_errors(
     for key in all_keys:
         fx = np.array(fit_data[key]["x"], dtype=float)
         fy = np.array(fit_data[key]["y"], dtype=float)
+        
+        if fx.ndim == 0 or fy.ndim == 0:
+            print(f" DEBUG: key={key!r} → fx.ndim={fx.ndim}, fx={fx}, fy.ndim={fy.ndim}, fy={fy}")
+
 
         if fx.size < 2 or fy.size < 2:
             betas.append(np.nan)
@@ -305,3 +341,6 @@ def compute_betas_from_errors(
     return np.array(all_keys,   dtype=float), \
            np.array(betas,      dtype=float), \
            np.array(beta_errs,  dtype=float)
+
+
+

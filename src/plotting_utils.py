@@ -794,6 +794,166 @@ def plot_errors_for_outer(
     plt.tight_layout()
     plt.show()
 
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+from scipy.stats import scoreatpercentile
+
+# Define family style maps
+FAMILY_MARKERS = {
+    "Heisenberg": "o",
+    "XYZ":        "s",
+    "XY":         "D",
+    # Add more families as needed...
+}
+FAMILY_COLORS = {
+    "Heisenberg": "red",
+    "XYZ":        "green",
+    "XY":         "purple",
+    # Add more families as needed...
+}
+
+def plot_errors_for_outer(
+    errors_by_scaling: dict,
+    scaling_param: str,
+    group_by: str,
+    outer_value,
+    include_families: list = None,
+    exclude_x_scale: set = None,
+    show_theory: bool = True
+):
+    """
+    Plot error vs. sum(inner_tuple) for a given outer_value, with one curve per family.
+    """
+    # Validate arguments
+    if scaling_param not in {"times", "spreading"}:
+        raise ValueError("scaling_param must be 'times' or 'spreading'")
+    if group_by not in {"alpha", "times", "spreading"}:
+        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
+    if group_by == scaling_param:
+        raise ValueError("group_by must differ from scaling_param")
+
+    # Labels
+    inner_label = "Total Experiment Time" if scaling_param == "times" else "Number of Spreadings"
+    outer_label = {"alpha": "α", "times": "Total Experiment Time", "spreading": "Number of Spreadings"}[group_by]
+
+    # (1) Filter triplets for this outer_value
+    filtered = []
+    for inner_tuple, triplets in errors_by_scaling.items():
+        for (rel_err, family, group_key) in triplets:
+            if group_key == outer_value:
+                filtered.append((inner_tuple, family, rel_err))
+    if not filtered:
+        print(f"No data for {outer_label} = {outer_value}")
+        return
+
+    # Group by inner_tuple
+    inner_groups = {}
+    for inner_tuple, family, rel_err in filtered:
+        if include_families and family not in include_families:
+            continue
+        inner_groups.setdefault(inner_tuple, []).append((family, rel_err))
+
+    # Prepare figure
+    plt.figure(figsize=(8, 7))
+    plt.xscale("log")
+    plt.yscale("log")
+
+    fit_x, fit_y = [], []
+    plotted_families = set()
+
+    # Iterate sorted by sum(inner_tuple)
+    for inner_tuple in sorted(inner_groups.keys(), key=lambda t: round(sum(t), 8)):
+        ssum = round(sum(inner_tuple), 8)
+        fam_errs_list = inner_groups[inner_tuple]
+        families_here = sorted({fam for fam, _ in fam_errs_list})
+        center_offset = (len(families_here) - 1) / 2
+
+        for i, family in enumerate(families_here):
+            fam_errs = [err for fam, err in fam_errs_list if fam == family]
+            # Prefilter
+            if scaling_param == 'times':
+                pref = fam_errs if ssum < 2 else [e for e in fam_errs if e < 0.1]
+            else:
+                pref = fam_errs if ssum < 50 else [e for e in fam_errs if e < 0.1]
+            if len(pref) < 2:
+                continue
+
+            # Percentile filter
+            q0, q50 = scoreatpercentile(pref, 0), scoreatpercentile(pref, 50)
+            filt = [e for e in pref if q0 <= e <= q50]
+            if len(filt) < 2:
+                continue
+
+            # Scatter
+            offset = (i - center_offset) * ssum * 0.02
+            x_vals = [ssum + offset] * len(fam_errs)
+            plt.scatter(
+                x_vals, fam_errs,
+                marker=FAMILY_MARKERS.get(family, 'o'),
+                color=FAMILY_COLORS.get(family, 'black'),
+                edgecolor='black',
+                alpha=0.7,
+                s=100,
+                label=family if family not in plotted_families else None
+            )
+            plotted_families.add(family)
+
+            # Collect for fit, unless excluded
+            if exclude_x_scale is None or ssum not in exclude_x_scale:
+                fit_x.extend([ssum] * len(filt))
+                fit_y.extend(filt)
+
+    # Fit power-law
+    def _power(x, a, b):
+        return a * np.power(x, b)
+
+    if len(fit_x) >= 2:
+        fx, fy = np.array(fit_x), np.array(fit_y)
+        idx = np.argsort(fx)
+        fx, fy = fx[idx], fy[idx]
+
+        try:
+            (a_fit, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
+            sigma_a, sigma_b = np.sqrt(np.diag(pcov))
+        except:
+            a_fit = b_fit = sigma_a = sigma_b = np.nan
+
+        # Smooth curve
+        x_fit = np.logspace(np.log10(fx.min()), np.log10(fx.max()), 200)
+        y_fit = _power(x_fit, a_fit, b_fit)
+
+        # Theory
+        if show_theory:
+            y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
+            plt.plot(x_fit, y_sql, '-', label="SQL ∝ x⁻⁰․⁵", linewidth=2, alpha=0.7)
+            y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
+            plt.plot(x_fit, y_heis, '-', label="Heisenberg ∝ x⁻¹", color='blue', linewidth=2, alpha=0.7)
+
+        # Fit line
+        def round_sig(val, err):
+            if np.isnan(err) or err == 0:
+                return round(val, 2), round(err, 2)
+            sig = -int(np.floor(np.log10(err)))
+            return round(val, sig), round(err, sig)
+        a_r, a_err_r = round_sig(a_fit, sigma_a)
+        b_r, b_err_r = round_sig(b_fit, sigma_b)
+
+        plt.plot(
+            x_fit, y_fit, 'r--',
+            label=f"Fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
+            linewidth=2, zorder=3, clip_on=False
+        )
+
+    # Finalize
+    plt.xlabel(f"{inner_label} (log)", fontsize=16)
+    plt.ylabel("Error (log)", fontsize=16)
+    plt.title(f"Error vs {inner_label} ({outer_label}={outer_value})", fontsize=18)
+    plt.xticks(fontsize=15); plt.yticks(fontsize=15)
+    plt.grid(True, which="both", linestyle='--', linewidth=0.5, alpha=0.7)
+    plt.legend(fontsize=14, loc='best')
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs, scaling_param: str):

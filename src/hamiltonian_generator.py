@@ -176,6 +176,7 @@ def generate_hamiltonian(
     h_z = np.array(params.get("h_z")) if params.get("h_z") is not None else None
     K   = np.array(params.get("K")) if params.get("K") is not None else None
     L   = np.array(params.get("L")) if params.get("L") is not None else None
+    
 
     # ――― 3) Nearest‐neighbor Heisenberg/XYZ (i,i+1) block ―――
     for i in range(num_qubits - 1):

@@ -54,6 +54,10 @@ def run_single_run(run_root, params, fixed):
     subdir = os.path.join(run_root, "_".join(name_parts))
     os.makedirs(subdir, exist_ok=True)
 
+    # Compute the (fixed) time stamps
+    times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
+    current_times = times_all[: params["steps"]]
+
     # Build and save JSON‐safe run config
     cfg = {
         **params,
@@ -70,12 +74,10 @@ def run_single_run(run_root, params, fixed):
         "activation":    fixed["ACTIVATION"].__name__,
         "nn_seed":       fixed["nn_seed"],
         "device":        str(fixed["device"]),
+        "times":         current_times,
     }
     save_json(cfg, os.path.join(subdir, "config.json"))
 
-    # Compute the (fixed) time stamps
-    times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
-    current_times = times_all[: params["steps"]]
 
     # Build & save Hamiltonian list
     ham_list = []
