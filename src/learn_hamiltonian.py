@@ -56,7 +56,7 @@ def run_single_run(run_root, params, fixed):
 
     # Compute the (fixed) time stamps
     times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
-    current_times = times_all[: params["steps"]]
+    current_times = times_all[: params["steps"]+1]
 
     # Build and save JSON‐safe run config
     cfg = {
