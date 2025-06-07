@@ -12,7 +12,7 @@ class DataGen(Dataset):
         initial_state_indices=None,
         seed=1234,
         spreadings=2,
-        perturbation_depth=2,
+        perturbation_depth=1,
         hamiltonian=None
     ):
         self.times = np.array(times, dtype=np.float64).flatten()
