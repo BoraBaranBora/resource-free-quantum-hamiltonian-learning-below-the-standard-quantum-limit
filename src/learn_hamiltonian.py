@@ -35,7 +35,7 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
 
 
 def generate_times(alpha, N, delta_t):
-    return [delta_t * (k**alpha) for k in range(1, N+1)]
+    return [0.0] +[delta_t * (k**alpha) for k in range(1, N+1)]
 
 
 def save_json(obj, path):
