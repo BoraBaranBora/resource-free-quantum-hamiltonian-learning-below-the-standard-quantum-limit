@@ -225,7 +225,7 @@ run_sweep3 = False     # SWEEP 3: nested α+spreading, measurements=25
 #   Specify which families to sweep (comma‐separated list).  For example:
 #     "Heisenberg", "XYZ2", "Heisenberg3,XYZ2", etc.
 # ───────────────────────────────────────────────────────────────────────────────
-chosen_families = "XYZ,XYZ2,XYZ3" #"Heisenberg"
+chosen_families = "XYZ" #"Heisenberg"
 # ───────────────────────────────────────────────────────────────────────────────
 
 
