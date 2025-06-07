@@ -215,7 +215,7 @@ def main():
             loader = DataLoader(
                 ds,
                 batch_size=get_max_batch_size(fixed["num_qubits"]),
-                shuffle=True,  num_workers=0,
+                shuffle=True
             )
 
             torch.manual_seed(fixed["nn_seed"])
