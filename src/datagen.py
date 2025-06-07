@@ -178,12 +178,12 @@ class DataGen(Dataset):
             pure_dm = self.prepare_initial_state_density_matrix(index)
 
             for _ in range(self.spreadings):
-                # 2) Apply random gates to get “scattered” initial state
-                scattered_state = self.apply_random_gates(pure_dm.clone())
+                # 2) Apply random gates to get “spread” initial state
+                spread_state = self.apply_random_gates(pure_dm.clone())
 
                 for time in self.times:
                     # 3) Evolve via Hamiltonian (on correct device)
-                    evolved_state = self.evolve_state_with_hamiltonian(scattered_state, time)
+                    evolved_state = self.evolve_state_with_hamiltonian(spread_state, time)
 
                     for m in range(self.num_measurements):
                         measurement_bases = measurement_bases_samples[m]

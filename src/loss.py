@@ -15,9 +15,6 @@ class Loss(nn.Module):
         self.S_dag_cpu = torch.tensor([[1, 0], [0, -1j]], dtype=torch.complex64)
         self.YH_cpu = self.H_cpu @ self.S_dag_cpu
 
-        self.trace_penalty_weight = 1.0
-        self.pos_semi_def_penalty_weight = 1.0
-
     def tensor_product(self, *matrices):
         """Compute tensor product of multiple matrices (all should share the same device)."""
         result = matrices[0]
