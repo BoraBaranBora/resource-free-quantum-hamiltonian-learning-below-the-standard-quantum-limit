@@ -193,11 +193,10 @@ def main():
                 "ham": f"{idx}/{total_hams}"
             })
 
-            # Pass `device` explicitly to generate_hamiltonian
             H = generate_hamiltonian(
                 family=info["family"],
                 num_qubits=fixed["num_qubits"],
-                device=fixed["device"],        # ← added
+                device=fixed["device"],        
                 **info["params"]
             )
 

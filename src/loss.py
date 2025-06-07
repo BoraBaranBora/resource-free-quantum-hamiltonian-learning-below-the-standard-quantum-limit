@@ -88,16 +88,15 @@ class Loss(nn.Module):
         return rho_rotated
 
     def get_lower_triangular_flattened(self, rho):
-        """
-        Extract lower‐triangular entries from rho ∈ (batch_size, D, D),
-        flatten real+imag parts into a single vector per sample.
-        """
+        """Extract the lower triangular part of a matrix and flatten it."""
+        # rho: (batch_size, D, D)
         batch_size, dim, _ = rho.shape
-        device = rho.device
-        indices = torch.tril_indices(dim, dim, device=device)
-        lower_real = rho.real[:, indices[0], indices[1]]
-        lower_imag = rho.imag[:, indices[0], indices[1]]
-        return torch.cat([lower_real, lower_imag], dim=-1)
+        # get row/col indices of lower triangle (including diagonal)
+        indices = torch.tril_indices(dim, dim, device=rho.device)
+        # select and return as (batch_size, n_entries)
+        lower_tri = rho[:, indices[0], indices[1]]
+        return lower_tri
+
 
     def reconstruct_density_matrix_from_lower(self, flattened_vectors):
         """Reconstruct a symmetric matrix from the lower triangular part."""
