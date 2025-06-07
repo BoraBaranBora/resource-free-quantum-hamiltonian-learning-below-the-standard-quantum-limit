@@ -238,7 +238,7 @@ class DataGen(Dataset):
 
 class DataGen(Dataset):
     def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=1, perturbation_depth=2, hamiltonian=None):
-        self.times = np.array(times[1:], dtype=np.float64).flatten()
+        self.times = np.array(times[:], dtype=np.float64).flatten()
         self.num_measurements = num_measurements
         self.shots = shots  # Number of times each measurement is performed
         self.num_qubits = num_qubits
