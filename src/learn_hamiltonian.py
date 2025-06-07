@@ -186,6 +186,8 @@ def main():
         subdir, ham_list, current_times = run_single_run(run_root, params, fixed)
         total_hams = len(ham_list)
         
+        print(f'current times:{current_times}')
+        
         batch_size = get_max_batch_size(fixed["num_qubits"])
 
         # Train each Hamiltonian in this combo
