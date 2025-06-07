@@ -28,7 +28,7 @@ STEPS               = 8
 
 # Sweep lists
 SPREADINGS = [1, 10, 25, 50, 100, 250, 500]
-ALPHAS     = [0.5]
+ALPHAS     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
 
 def run(cmd):

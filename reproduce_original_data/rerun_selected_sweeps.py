@@ -218,8 +218,8 @@ from reproduction_pipelines import (
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
 run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
-run_sweep2 = False     # SWEEP 2: α‐sweep (spreading=50), measurements=25
-run_sweep3 = True     # SWEEP 3: nested α+spreading, measurements=25
+run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=50), measurements=25
+run_sweep3 = False     # SWEEP 3: nested α+spreading, measurements=25
 
 # ───────────────────────────────────────────────────────────────────────────────
 #   Specify which families to sweep (comma‐separated list).  For example:
