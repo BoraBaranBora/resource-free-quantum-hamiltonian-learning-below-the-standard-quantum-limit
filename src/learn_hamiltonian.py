@@ -154,7 +154,7 @@ def main():
         "hidden_layers":       [200, 200, 200],
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
-        "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        "device":              torch.device("cpu"), # torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     }
     print(f"Using device: {fixed['device']}")
     print(f"Sweeping families: {fixed['families']}")
