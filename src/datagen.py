@@ -236,13 +236,13 @@ class DataGen(Dataset):
 
 
 class DataGen(Dataset):
-    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, perturbations=2, perturbation_depth=2, hamiltonian=None):
+    def __init__(self, times: list, num_measurements: int, shots: int, num_qubits: int, initial_state_indices = None, seed=1234, spreadings=2, perturbation_depth=2, hamiltonian=None):
         self.times = np.array(times[1:], dtype=np.float64).flatten()
         self.num_measurements = num_measurements
         self.shots = shots  # Number of times each measurement is performed
         self.num_qubits = num_qubits
         self.seed = seed
-        self.perturbations = perturbations
+        self.spreadings = spreadings
         self.perturbation_depth = perturbation_depth
         self.initial_state_indices = initial_state_indices
         self.H = torch.tensor([[1, 1], [1, -1]], dtype=torch.complex64) / torch.sqrt(torch.tensor(2, dtype=torch.complex64))
@@ -366,7 +366,7 @@ class DataGen(Dataset):
         measurement_bases_samples = [np.random.choice(['X', 'Y', 'Z'], size=self.num_qubits) for _ in range(self.num_measurements)]
 
         for index in self.initial_state_indices:
-            for _ in range(self.perturbations):
+            for _ in range(self.spreadings):
                 basis_state = torch.zeros(2 ** self.num_qubits, dtype=torch.complex64)
                 basis_state[index] = 1.0
                 basis_state = torch.outer(basis_state, basis_state.conj())
