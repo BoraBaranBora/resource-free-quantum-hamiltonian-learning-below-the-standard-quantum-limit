@@ -206,6 +206,9 @@ class DataGen(Dataset):
         basis_tensor = torch.tensor(basis_list, dtype=torch.long, device=self.device)
         targets_tensor = torch.tensor(targets_list, dtype=torch.long, device=self.device)
         initial_states_tensor = torch.stack(initial_states_list).to(self.device)
+        
+        print(f'initial_states_tensor shape: {initial_states_tensor.size()}')
+
 
         return targets_tensor, times_tensor, basis_tensor, initial_states_tensor
 
