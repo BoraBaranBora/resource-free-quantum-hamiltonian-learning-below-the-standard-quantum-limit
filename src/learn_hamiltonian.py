@@ -35,7 +35,7 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
 
 
 def generate_times(alpha, N, delta_t):
-    return [0.0] +[delta_t * (k**alpha) for k in range(1, N+1)]
+    return [delta_t * (k**alpha) for k in range(1, N+1)]
 
 
 def save_json(obj, path):
@@ -56,7 +56,7 @@ def run_single_run(run_root, params, fixed):
 
     # Compute the (fixed) time stamps
     times_all     = generate_times(params["alpha"], params["steps"], fixed["delta_t"])
-    current_times = times_all[: params["steps"]+1]
+    current_times = times_all[: params["steps"]]
 
     # Build and save JSON‐safe run config
     cfg = {

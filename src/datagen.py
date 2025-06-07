@@ -15,7 +15,7 @@ class DataGen(Dataset):
         perturbation_depth=1,
         hamiltonian=None
     ):
-        self.times = np.array(times[1:], dtype=np.float64).flatten()
+        self.times = np.array(times, dtype=np.float64).flatten()
         self.num_measurements = num_measurements
         self.shots = shots
         self.num_qubits = num_qubits
