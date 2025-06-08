@@ -27,7 +27,8 @@ SHOTS               = 1
 STEPS               = 8
 
 # Sweep lists
-SPREADINGS = [1, 10, 25, 50, 100, 250, 500]
+SPREADINGS_SWEEP1 = [1, 2, 4, 8, 16, 32, 64, 128]
+SPREADINGS_SWEEP3 = [1, 10, 25, 50, 100, 250, 500]
 ALPHAS     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
 
@@ -45,7 +46,7 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS + 1))
 
-    for spread in tqdm(SPREADINGS, desc="SWEEP 1 Data (measurements=50)"):
+    for spread in tqdm(SPREADINGS_SWEEP1, desc="SWEEP 1 Data (measurements=50)"):
         run([
             sys.executable, DEMO,
             "--alphas",       "1.0",                      # fixed α
@@ -85,7 +86,7 @@ def reproduce_data_SWEEP3(base_folder: str, families: str):
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
-    spreading_list = ",".join(str(p) for p in SPREADINGS)
+    spreading_list = ",".join(str(p) for p in SPREADINGS_SWEEP3)
 
     for alpha in tqdm(ALPHAS, desc="SWEEP 3 Data (measurements=25)"):
         run([
