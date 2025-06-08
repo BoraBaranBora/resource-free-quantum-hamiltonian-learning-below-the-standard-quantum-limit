@@ -26,7 +26,7 @@ MEASUREMENTS_SWEEP2 = 25   # for SWEEP 2 and SWEEP 3
 SHOTS               = 1
 STEPS               = 8
 
-STEPS_SWEEP1               = 8
+STEPS_SWEEP1               = 12
 
 # Sweep lists
 SPREADINGS_SWEEP1 = [1, 2, 4, 8, 16, 32, 64, 128]
