@@ -42,12 +42,12 @@ if __name__ == "__main__":
 
     # Extending the quadratic Regime
     # Figure 1 a) & b) (purely from Sweep 1 Data)
-    #run_sweep1_pipeline(sweep1_path, cache_dir)
+    run_sweep1_pipeline(sweep1_path, cache_dir)
 
     # From From Temporal Quadratic Sensitivity to Emergent Coherence in State Space
     # Illustrative Example Figure 2
     # 2a) (Single Run from Sweep 2)
-    run_sweep2_outer(sweep2_path, cache_dir)
+    #run_sweep2_outer(sweep2_path, cache_dir)
     # 2b) (Single Run from Sweep 3)
     #run_sweep3_outer(sweep3_path, cache_dir)
 
