@@ -122,7 +122,7 @@ def main():
     p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=10,  help="Early‐stop window")
-    p.add_argument("--tolerance",    type=float, default=5e-6, help="Convergence tolerance")
+    p.add_argument("--tolerance",    type=float, default=1e-5, help="Convergence tolerance")
     p.add_argument("--delta-t",      type=float, default=0.1,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
