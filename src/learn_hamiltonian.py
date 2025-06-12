@@ -26,13 +26,33 @@ from loss import Loss
 from utils import convert_to_serializable, generate_advanced_codified_name
 
 
-def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
-    hilbert_dim = 2 ** num_qubits
-    density_mb  = (hilbert_dim**2) * 16 / (1024**2)
-    avail_mb    = (gpu_memory_gb - memory_overhead_gb) * 1024
-    per_batch   = 3 * density_mb
-    return int((avail_mb // per_batch)*0.95)
 
+
+def get_max_batch_size_np(nq, gpu_mem_gb, overhead_gb=2, round_to=50, safety=0.95):
+    """
+    Estimate max batch size for density-matrix sims of 2**nq dimension,
+    given GPU memory in GB, reserved overhead, safety factor, and rounding.
+    
+    Parameters:
+        nq (int): number of qubits.
+        gpu_mem_gb (float): total GPU memory in GB.
+        overhead_gb (float): GB to reserve (default 2).
+        round_to (int or None): round down to nearest multiple (default 50). Use <=1 or None to skip.
+        safety (float): safety factor before rounding (default 0.95).
+    Returns:
+        int: max batch size (multiple of round_to), or 0 if none fits.
+    """
+    avail = (gpu_mem_gb - overhead_gb) * 1024**3
+    if avail <= 0:
+        return 0
+    # log per-sample bytes = ln(48) + nq * ln(4)
+    log_ps = np.log(48.0) + nq * np.log(4.0)
+    if log_ps > np.log(avail + 1e-9):
+        return 0
+    bs = int(np.exp(np.log(avail) - log_ps) * safety)
+    if round_to and round_to > 1:
+        bs = (bs // round_to) * round_to
+    return bs
 
 def generate_times(alpha, N, delta_t):
     return [delta_t * (k**alpha) for k in range(1, N+1)]
