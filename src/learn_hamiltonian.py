@@ -31,7 +31,7 @@ def get_max_batch_size(num_qubits, gpu_memory_gb=24, memory_overhead_gb=2):
     density_mb  = (hilbert_dim**2) * 16 / (1024**2)
     avail_mb    = (gpu_memory_gb - memory_overhead_gb) * 1024
     per_batch   = 3 * density_mb
-    return int(avail_mb // per_batch)
+    return int((avail_mb // per_batch)*0.95)
 
 
 def generate_times(alpha, N, delta_t):
@@ -123,7 +123,7 @@ def main():
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=10,  help="Early‐stop window")
     p.add_argument("--tolerance",    type=float, default=1e-5, help="Convergence tolerance")
-    p.add_argument("--delta-t",      type=float, default=0.1,  help="Δt for time steps")
+    p.add_argument("--delta-t",      type=float, default=0.05,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
     args = p.parse_args()

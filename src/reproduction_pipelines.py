@@ -21,7 +21,7 @@ DEMOPATH = os.path.dirname(os.path.abspath(__file__))
 DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
-MEASUREMENTS_SWEEP1 = 100   # for SWEEP 1
+MEASUREMENTS_SWEEP1 = 50   # for SWEEP 1
 MEASUREMENTS_SWEEP2 = 25   # for SWEEP 2 and SWEEP 3
 SHOTS               = 1
 STEPS               = 8
@@ -42,13 +42,13 @@ def run(cmd):
 
 def reproduce_data_SWEEP1(base_folder: str, families: str):
     """
-    Sweep over parameter combinations for SWEEP 1 (measurements=50).
+    Sweep over parameter combinations for SWEEP 1 .
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS_SWEEP1 + 1))
 
-    for spread in tqdm(SPREADINGS_SWEEP1, desc="SWEEP 1 Data (measurements=50)"):
+    for spread in tqdm(SPREADINGS_SWEEP1, desc=f"SWEEP 1 Data (measurements={MEASUREMENTS_SWEEP1})"):
         run([
             sys.executable, DEMO,
             "--alphas",       "1.0",                      # fixed α
@@ -63,13 +63,13 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
 
 def reproduce_data_SWEEP2(base_folder: str, families: str):
     """
-    Sweep over parameter combinations for SWEEP 2 (measurements=25).
+    Sweep over parameter combinations for SWEEP 2 .
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS + 1))
 
-    for alpha in tqdm(ALPHAS, desc="SWEEP 2 Data (measurements=25)"):
+    for alpha in tqdm(ALPHAS, desc=f"SWEEP 2 Data (measurements={MEASUREMENTS_SWEEP2})"):
         run([
             sys.executable, DEMO,
             "--alphas",       str(alpha),                 # sweep this α
