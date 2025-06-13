@@ -61,6 +61,17 @@ def run(cmd):
         # Re-raise so your outer script still sees the failure:
         raise
 
+
+def run(cmd):
+    print(">>>", " ".join(cmd))
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError:
+        # On failure, rerun quickly with capture to get full stderr?
+        # WARNING: rerunning re-executes the expensive job—usually not acceptable.
+        # Instead, rely on logs written by the child script.
+        print("Subprocess failed; check log files under the run folder for traceback.")
+        raise
     
 
 def reproduce_data_SWEEP1(base_folder: str, families: str):
