@@ -40,6 +40,29 @@ def run(cmd):
     subprocess.run(cmd, check=True)
     
 
+def run(cmd):
+    print(f"Running command: {' '.join(cmd)}")
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        if result.stdout:
+            print("Subprocess stdout:\n", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("=== Subprocess failed ===")
+        print("Command:", e.cmd)
+        print("Return code:", e.returncode)
+        if e.stdout:
+            print("Stdout:\n", e.stdout)
+        if e.stderr:
+            print("Stderr:\n", e.stderr)
+        # Optionally write to log file for easier inspection:
+        with open("last_failed_subprocess.log", "w") as f:
+            f.write("STDOUT:\n" + (e.stdout or "") + "\n\n")
+            f.write("STDERR:\n" + (e.stderr or ""))
+        # Re-raise so your outer script still sees the failure:
+        raise
+
+    
+
 def reproduce_data_SWEEP1(base_folder: str, families: str):
     """
     Sweep over parameter combinations for SWEEP 1 .
