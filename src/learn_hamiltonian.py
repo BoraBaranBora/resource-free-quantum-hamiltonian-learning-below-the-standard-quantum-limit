@@ -242,6 +242,7 @@ def main():
 
         # Train each Hamiltonian in this combo
         for idx, info in enumerate(ham_list, start=1):
+            print(torch.cuda.memory_summary(fixed["device"]))
             overall.set_postfix({
                 "α": f"{alpha:.3f}",
                 "spread": spreading,
@@ -321,6 +322,7 @@ def main():
             del criterion, optimizer, loss
             torch.cuda.empty_cache()
             gc.collect()
+            print(torch.cuda.memory_summary(fixed["device"]))
 
         overall.update()
 
