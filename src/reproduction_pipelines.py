@@ -30,7 +30,7 @@ STEPS_SWEEP1        = 15
 
 # Sweep lists
 SPREADINGS_SWEEP1 = [128]#[1, 2, 4, 8, 16, 32, 64, 128]
-SPREADINGS_SWEEP3 = [500]#[1, 10, 25, 50, 100, 250, 500]
+SPREADINGS_SWEEP3 = [1, 10, 25, 50, 100, 250, 500]
 ALPHAS     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
 
@@ -89,7 +89,7 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
             "--spreadings",   str(spread),                # sweep this spreading
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
-            "--steps",        step_list,                  # sweep steps = 1…8
+            "--steps",        step_list[:-2],                  # sweep steps = 1…8
             "--families",     families,                   # now passed in
             "--output-dir",   base_folder
         ])
