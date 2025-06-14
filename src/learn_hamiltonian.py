@@ -54,6 +54,39 @@ def get_max_batch_size(nq, gpu_mem_gb=24, overhead_gb=2, round_to=50, safety=0.9
         bs = (bs // round_to) * round_to
     return bs
 
+def get_max_batch_size(nq, overhead_gb=2, round_to=50, safety=0.90):
+    """
+    Estimate max batch size for density-matrix simulations of 2^nq dimension,
+    using actual GPU memory availability at runtime.
+
+    Returns:
+        int: max batch size (multiple of round_to), or 0 if none fits.
+    """
+    if not torch.cuda.is_available():
+        print("[WARN] CUDA not available — defaulting to batch size 1.")
+        return 1
+
+    # Get current free and total memory on active CUDA device
+    free_mem_bytes, total_mem_bytes = torch.cuda.mem_get_info()
+    free_gb = free_mem_bytes / (1024 ** 3)
+    print(f"[INFO] Detected {free_gb:.2f} GiB free on device")
+
+    # Reserve some overhead for fragmentation / caching
+    avail = max(0, free_mem_bytes - overhead_gb * 1024**3)
+    if avail <= 0:
+        return 0
+
+    # Estimate bytes per sample: ~48 * 4^nq
+    log_ps = np.log(48.0) + nq * np.log(4.0)
+    if log_ps > np.log(avail + 1e-9):
+        return 0
+
+    bs = int(np.exp(np.log(avail) - log_ps) * safety)
+    if round_to and round_to > 1:
+        bs = (bs // round_to) * round_to
+    return max(bs, 1)
+
+
 def generate_times(alpha, N, delta_t):
     return [delta_t * (k**alpha) for k in range(1, N+1)]
 
