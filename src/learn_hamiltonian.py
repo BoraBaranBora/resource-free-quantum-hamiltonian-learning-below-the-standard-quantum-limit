@@ -69,7 +69,7 @@ def get_max_batch_size(nq, overhead_gb=2, round_to=50, safety=0.90):
     # Get current free and total memory on active CUDA device
     free_mem_bytes, total_mem_bytes = torch.cuda.mem_get_info()
     free_gb = free_mem_bytes / (1024 ** 3)
-    print(f"[INFO] Detected {free_gb:.2f} GiB free on device")
+    #print(f"[INFO] Detected {free_gb:.2f} GiB free on device")
 
     # Reserve some overhead for fragmentation / caching
     avail = max(0, free_mem_bytes - overhead_gb * 1024**3)
