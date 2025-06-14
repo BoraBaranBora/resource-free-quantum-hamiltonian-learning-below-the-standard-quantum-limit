@@ -318,6 +318,7 @@ def main():
             save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
 
             del ds, predictor, xb, tb, bb, ib
+            del criterion, optimizer, loss
             torch.cuda.empty_cache()
             gc.collect()
 
