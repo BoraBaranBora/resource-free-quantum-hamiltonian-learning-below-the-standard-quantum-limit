@@ -54,7 +54,7 @@ def get_max_batch_size(nq, gpu_mem_gb=24, overhead_gb=2, round_to=50, safety=0.9
         bs = (bs // round_to) * round_to
     return bs
 
-def get_max_batch_size(nq, overhead_gb=6, round_to=50, safety=0.75):
+def get_max_batch_size(nq, overhead_gb=6, round_to=50, safety=0.9):
     """
     Estimate max batch size for density-matrix simulations of 2^nq dimension,
     using actual GPU memory availability at runtime.
