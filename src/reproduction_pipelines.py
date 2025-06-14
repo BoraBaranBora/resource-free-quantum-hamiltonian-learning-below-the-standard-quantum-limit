@@ -80,7 +80,7 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
-    step_list = ",".join(str(i) for i in range(1, STEPS_SWEEP1 + 1))
+    step_list = ",".join(str(i) for i in range(12, STEPS_SWEEP1 + 1))
 
     for spread in tqdm(SPREADINGS_SWEEP1, desc=f"SWEEP 1 Data (measurements={MEASUREMENTS_SWEEP1})"):
         run([
@@ -89,7 +89,7 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
             "--spreadings",   str(spread),                # sweep this spreading
             "--measurements", str(MEASUREMENTS_SWEEP1),   # 50
             "--shots",        str(SHOTS),
-            "--steps",        step_list[:-2],                  # sweep steps = 1…8
+            "--steps",        step_list,                  # sweep steps = 1…8
             "--families",     families,                   # now passed in
             "--output-dir",   base_folder
         ])
