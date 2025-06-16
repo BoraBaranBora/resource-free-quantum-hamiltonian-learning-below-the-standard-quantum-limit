@@ -23,7 +23,7 @@ DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 # Shared fixed settings
 MEASUREMENTS_SWEEP1 = 25   # for SWEEP 1
 MEASUREMENTS_SWEEP2 = 25   # for SWEEP 2 and SWEEP 3
-SHOTS               = 1
+SHOTS               = 2
 STEPS               = 12
 
 STEPS_SWEEP1        = 15
