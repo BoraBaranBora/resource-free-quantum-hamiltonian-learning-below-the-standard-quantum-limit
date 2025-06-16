@@ -27,35 +27,7 @@ from loss import Loss
 from utils import convert_to_serializable, generate_advanced_codified_name
 
 
-
-
-def get_max_batch_size(nq, gpu_mem_gb=24, overhead_gb=10, round_to=50, safety=0.90):
-    """
-    Estimate max batch size for density-matrix sims of 2**nq dimension,
-    given GPU memory in GB, reserved overhead, safety factor, and rounding.
-    
-    Parameters:
-        nq (int): number of qubits.
-        gpu_mem_gb (float): total GPU memory in GB.
-        overhead_gb (float): GB to reserve (default 2).
-        round_to (int or None): round down to nearest multiple (default 50). Use <=1 or None to skip.
-        safety (float): safety factor before rounding (default 0.95).
-    Returns:
-        int: max batch size (multiple of round_to), or 0 if none fits.
-    """
-    avail = (gpu_mem_gb - overhead_gb) * 1024**3
-    if avail <= 0:
-        return 0
-    # log per-sample bytes = ln(48) + nq * ln(4)
-    log_ps = np.log(48.0) + nq * np.log(4.0)
-    if log_ps > np.log(avail + 1e-9):
-        return 0
-    bs = int(np.exp(np.log(avail) - log_ps) * safety)
-    if round_to and round_to > 1:
-        bs = (bs // round_to) * round_to
-    return bs
-
-def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.9):
+def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.8):
     """
     Estimate max batch size for density-matrix simulations of 2^nq dimension,
     using actual GPU memory availability at runtime.
