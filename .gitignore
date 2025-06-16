@@ -27,6 +27,11 @@ reproduce_original_data/first_parameter_sweep_data
 reproduce_original_data/second_parameter_sweep_data
 reproduce_original_data/third_parameter_sweep_data
 
+reproduce_original_data/first_parameter_sweep_data_2shots
+reproduce_original_data/second_parameter_sweep_data_2shots
+reproduce_original_data/third_parameter_sweep_data_2shots
+
+
 demo/backup.py
 
 dump/
