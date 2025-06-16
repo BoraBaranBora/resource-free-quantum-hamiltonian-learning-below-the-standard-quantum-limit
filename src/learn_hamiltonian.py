@@ -29,7 +29,7 @@ from utils import convert_to_serializable, generate_advanced_codified_name
 
 
 
-def get_max_batch_size(nq, gpu_mem_gb=24, overhead_gb=2, round_to=50, safety=0.90):
+def get_max_batch_size(nq, gpu_mem_gb=24, overhead_gb=10, round_to=50, safety=0.90):
     """
     Estimate max batch size for density-matrix sims of 2**nq dimension,
     given GPU memory in GB, reserved overhead, safety factor, and rounding.
