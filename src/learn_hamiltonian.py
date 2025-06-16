@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 learn_hamiltonian.py
 
@@ -206,7 +207,7 @@ def main():
         "coupling_type":       "anisotropic_normal",
         "h_field_type":        "random",
         "include_transverse":  True,
-        "hidden_layers":       [400, 400],
+        "hidden_layers":       [300, 300],
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
         "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),
