@@ -27,7 +27,7 @@ from loss import Loss
 from utils import convert_to_serializable, generate_advanced_codified_name
 
 
-def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.8):
+def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.9):
     """
     Estimate max batch size for density-matrix simulations of 2^nq dimension,
     using actual GPU memory availability at runtime.
@@ -50,7 +50,7 @@ def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.8):
         return 0
 
     # Estimate bytes per sample: ~48 * 4^nq
-    log_ps = np.log(42*8.0) + nq * np.log(4.0)
+    log_ps = np.log(4*48.0) + nq * np.log(4.0)
     if log_ps > np.log(avail + 1e-9):
         return 0
 
