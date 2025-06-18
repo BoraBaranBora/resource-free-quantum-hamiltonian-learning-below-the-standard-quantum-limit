@@ -54,12 +54,18 @@ def get_max_batch_size(nq, overhead_gb=2.5, round_to=50, safety=0.9):
     if log_ps > np.log(avail + 1e-9):
         return 0
 
-    bs = int(np.exp(np.log(avail) - log_ps) * safety)
-    if round_to and round_to > 1:
-        bs = (bs // round_to) * round_to
+    #bs = int(np.exp(np.log(avail) - log_ps) * safety)
+    #if round_to and round_to > 1:
+    #    bs = (bs // round_to) * round_to
         
     #print(f'batchsize :{max(bs, 1)}')
-    return max(bs, 1)
+    #return max(bs, 1)
+
+    bs = max(int(np.exp(np.log(avail) - log_ps) * safety), 1)
+    if round_to and round_to > 1:
+        bs = max((bs // round_to) * round_to, round_to)
+    return bs
+
 
 
 def generate_times(alpha, N, delta_t):
