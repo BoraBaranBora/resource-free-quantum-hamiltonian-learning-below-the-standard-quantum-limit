@@ -189,7 +189,6 @@ def main():
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
         "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        "lambda_l1": 1e-5,
     }
     print(f"Using device: {fixed['device']}")
     print(f"Sweeping families: {fixed['families']}")
@@ -267,7 +266,7 @@ def main():
                 device=fixed["device"]             # ← added
             )
             criterion = Loss(num_qubits=fixed["num_qubits"])
-            optimizer = optim.AdamW(predictor.parameters())
+            optimizer = optim.AdamW(predictor.parameters(),weight_decay=1e-3)
 
             loss_hist = []
             for epoch in range(fixed["epochs"]):
@@ -277,12 +276,6 @@ def main():
                 for xb, tb, bb, ib in loader:
                     xb, tb, bb, ib = (t.to(fixed["device"]) for t in (xb, tb, bb, ib))
                     loss = criterion(predictor, tb, ib, xb, bb)
-                    
-                    # Add L1 regularization
-                    lambda_l1 = fixed.get("lambda_l1", 0.0)
-                    l1_reg = sum(param.abs().sum() for param in predictor.parameters())
-                    loss = loss + lambda_l1 * l1_reg
-                    
                     loss.backward()
                     total_loss += loss.item()
                 optimizer.step()
