@@ -199,8 +199,12 @@ def collect_recovery_errors_from_data(
             
             with torch.no_grad():
                 out_flat = predictor(batch_size=1).squeeze(0)
-                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0 # rescale, because loss had factor of 0.25
+                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 1.0 # rescale, because loss had factor of 0.25
                 error = torch.mean((rec_matrix - original_ham).abs()).item()
+                #error = torch.mean(((rec_matrix - original_ham).abs() / original_ham.abs().clamp(min=1e-8))).item()
+                #error = torch.norm(rec_matrix - original_ham) / torch.norm(original_ham)
+                #error = torch.mean((rec_matrix - original_ham).abs()) / torch.mean(original_ham.abs())
+                print(f'error: {error}')
 
             # ─── Decide the group_key based on group_by ───
             if group_by == "alpha":
