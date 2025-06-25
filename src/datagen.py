@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset
+from functools import reduce
+
 
 class DataGen(Dataset):
     def __init__(
