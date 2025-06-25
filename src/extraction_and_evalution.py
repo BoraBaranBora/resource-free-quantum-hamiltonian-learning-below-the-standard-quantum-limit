@@ -199,7 +199,7 @@ def collect_recovery_errors_from_data(
             
             with torch.no_grad():
                 out_flat = predictor(batch_size=1).squeeze(0)
-                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 1.0 # rescale, because loss had factor of 0.25
+                rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 4.0 # rescale, because loss had factor of 0.25
                 error = torch.mean((rec_matrix - original_ham).abs()).item()
 
             # ─── Decide the group_key based on group_by ───
@@ -217,336 +217,11 @@ def collect_recovery_errors_from_data(
 
 
 
-
-def compute_betas_from_errors(
-    errors_by_time: dict,
-    scaling_param='spreading',
-    include_families: list = None,
-    exclude_x_scale: set = None,
-    exclude_above_one = False,
-):
-    """
-    Given:
-      errors_by_time: {
-        time_stamps_tuple → [ (error, true_family, key) ]
-      }
-    (where `key` is either a spreading value or an α value),
-    this function computes, for each unique `key`, the power‐law exponent b
-    in the fit err ≈ a * (sum(time_stamps))^b.
-
-    Steps:
-      1) For each (time_stamps, error_list) pair, compute ssum = round(sum(time_stamps), 8).
-      2) Bucket all error values by their `key`.
-      3) For each key:
-           • For each ssum (total experiment time), gather all errs < 1.0.
-           • Compute q0 = 0th percentile of that list, q50 = 50th percentile.
-             Keep only values e with q0 ≤ e ≤ q50.
-           • Append (ssum, e) for each remaining e into fit_x and fit_y.
-      4) Perform curve_fit on (fit_x, fit_y) with model err = a * x^b.
-      5) Return (keys_sorted, betas_array, beta_errs_array).
-
-    Returns:
-      keys_sorted:  sorted list of unique keys
-      betas:        np.ndarray of fitted exponents b, in the same order
-      beta_errs:    np.ndarray of uncertainties σ_b, in the same order
-    """
-    # (1) Identify all unique keys
-    all_keys = sorted({ key for errs in errors_by_time.values() for (_, _, key) in errs })
-
-    # Prepare a container for filtered data per key
-    fit_data = { k: {"x": [], "y": []} for k in all_keys }
-
-    # (2) Iterate over each time_stamps → error list
-    for time_tuple, err_list in errors_by_time.items():
-        ssum = round(sum(time_tuple), 8)
-
-        # Build a temporary bucket of errs per key at this ssum
-        bucket = {}
-        for err, fam, key in err_list:
-            if include_families is not None and fam not in include_families:
-                continue
-            bucket.setdefault(key, []).append(err)
-
-        for key, errs_at_key in bucket.items():
-            if exclude_x_scale and (ssum in exclude_x_scale):
-                continue
-
-            # (3a) Prefilter: keep only err < 1.0
-            if scaling_param == 'times':
-                if exclude_above_one:
-                    pref = [e for e in errs_at_key if e < 1.0]
-                    if len(pref) < 2:
-                        continue
-                elif ssum < 2:
-                    pref = errs_at_key.copy()
-                else:
-                    pref = [e for e in errs_at_key if e < 0.1]
-            else:
-                #pref = errs_at_key.copy()
-                if ssum < 50:
-                    pref = errs_at_key.copy()
-                else:
-                    pref = [e for e in errs_at_key if e < 0.1]
-
-            if len(pref) < 2:
-                continue
-
-            # (3b) Compute 0th and 50th percentiles, then percentile‐filter
-            q25 = np.percentile(pref, 0)   # same as min(pref)
-            q75 = np.percentile(pref, 50)  # median(pref)
-            filt = [e for e in pref if (q25 <= e <= q75)]
-            #if len(filt) < 2:
-            #    continue
-
-            # (3c) Append (ssum, e) for each e in filt
-            fit_data[key]["x"].extend([ssum] * len(filt))
-            fit_data[key]["y"].extend(filt)
-
-    # (4) For each key, do a power‐law fit: err = a * x^b
-    def _power(x, a, b):
-        return a * np.power(x, b)
-
-    betas = []
-    beta_errs = []
-
-    for key in all_keys:
-        fx = np.array(fit_data[key]["x"], dtype=float)
-        fy = np.array(fit_data[key]["y"], dtype=float)
-        
-        if fx.ndim == 0 or fy.ndim == 0:
-            print(f" DEBUG: key={key!r} → fx.ndim={fx.ndim}, fx={fx}, fy.ndim={fy.ndim}, fy={fy}")
-
-
-        if fx.size < 2 or fy.size < 2:
-            betas.append(np.nan)
-            beta_errs.append(np.nan)
-            continue
-
-        # Sort by x to stabilize the fit
-        idx = np.argsort(fx)
-        fx = fx[idx]
-        fy = fy[idx]
-
-        try:
-            (a_fit, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
-            # Uncertainty in b is sqrt of the corresponding diagonal element
-            sigma_b = np.sqrt(pcov[1, 1]) if pcov.shape == (2, 2) else np.nan
-        except Exception:
-            b_fit = np.nan
-            sigma_b = np.nan
-
-        betas.append(float(b_fit))
-        beta_errs.append(float(sigma_b))
-
-    return np.array(all_keys,   dtype=float), \
-           np.array(betas,      dtype=float), \
-           np.array(beta_errs,  dtype=float)
-
-
-
-
-
-def compute_betas_from_errors(
-    errors_by_time: dict,
-    scaling_param='spreading',
-    include_families: list = None,
-    exclude_x_scale: set = None,
-    exclude_above_one: bool = False,
-):
-    # ... [snip docstring and setup] ...
-    all_keys = sorted({ key for errs in errors_by_time.values() for (_, _, key) in errs })
-    fit_data = { k: {"x": [], "y": []} for k in all_keys }
-
-    def _power(x, a, b):
-        return a * np.power(x, b)
-
-    # (2) Iterate
-    for time_tuple, err_list in errors_by_time.items():
-        ssum = round(sum(time_tuple), 8)
-        if exclude_x_scale and ssum in exclude_x_scale:
-            continue
-
-        # bucket by key
-        bucket = {}
-        for err, fam, key in err_list:
-            if include_families and fam not in include_families:
-                continue
-            bucket.setdefault(key, []).append(err)
-
-        for key, errs_at_key in bucket.items():
-            # ——— Replace your old “prefilter” with this ———
-            if exclude_above_one:
-                # apply the same thresholds as plot_errors_by_spreadings
-                thresh = 1.25 if ssum == 0.1 else 1.0
-                pref = [e for e in errs_at_key if e < thresh]
-            else:
-                # keep all errs, then let percentile do the work
-                pref = errs_at_key.copy()
-
-            if len(pref) < 2:
-                continue
-
-            # (3b) percentile filter
-            q0 = np.percentile(pref, 0)
-            q50 = np.percentile(pref, 50)
-            filt = [e for e in pref if q0 <= e <= q50]
-            if len(filt) < 2:
-                continue
-
-            # (3c) collect for fit
-            fit_data[key]["x"].extend([ssum]*len(filt))
-            fit_data[key]["y"].extend(filt)
-
-    # (4) Fit per key
-    betas, beta_errs = [], []
-    for key in all_keys:
-        fx = np.array(fit_data[key]["x"], float)
-        fy = np.array(fit_data[key]["y"], float)
-        if fx.size < 2 or fy.size < 2:
-            betas.append(np.nan); beta_errs.append(np.nan)
-            continue
-
-        idx = np.argsort(fx)
-        fx, fy = fx[idx], fy[idx]
-        try:
-            (_, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
-            sigma_b = np.sqrt(pcov[1, 1]) if pcov.shape == (2, 2) else np.nan
-        except:
-            b_fit = sigma_b = np.nan
-
-        betas.append(float(b_fit))
-        beta_errs.append(float(sigma_b))
-
-    return (
-        np.array(all_keys,   dtype=float),
-        np.array(betas,      dtype=float),
-        np.array(beta_errs,  dtype=float),
-    )
-
-
-
-
-
 def compute_betas_from_errors(
     errors_by_time: dict,
     scaling_param: str = 'spreading',
     include_families: list = None,
-    exclude_x_scale: set = None,
-    exclude_above_one: bool = False,
-):
-    """
-    Returns a dict:
-      family → (keys_sorted, betas_array, beta_errs_array)
-
-    where for each family we fit, for each unique `key`, the model:
-      err ≈ a * (sum(time_stamps))^b
-    using only that family's data.
-    """
-    # 1) Gather the full set of keys and families
-    all_keys = sorted({ key for errs in errors_by_time.values() for (_, _, key) in errs })
-    all_fams = sorted({
-        fam
-        for errs in errors_by_time.values()
-        for (_, fam, _) in errs
-        if include_families is None or fam in include_families
-    })
-
-    # Prepare output container
-    results = {}
-
-    # Power‐law model
-    def _power(x, a, b):
-        return a * np.power(x, b)
-
-    # For each family, build its own fit_data[key] → {"x":[], "y":[]}
-    for fam in all_fams:
-        # initialize per‐key buckets
-        fit_data = { k: {"x": [], "y": []} for k in all_keys }
-
-        # collect only this family's errors
-        for time_tuple, err_list in errors_by_time.items():
-            ssum = round(sum(time_tuple), 8)
-
-            # skip excluded x
-            if exclude_x_scale and ssum in exclude_x_scale:
-                continue
-
-            for err, fam0, key in err_list:
-                if fam0 != fam:
-                    continue
-                # prefilter by scaling_param & exclude_above_one
-                if exclude_above_one:
-                    threshold = 1.25 if ssum == 0.1 else 1.0
-                    if err >= threshold:
-                        continue
-                if scaling_param == 'times':
-                    if ssum < 2:
-                        pref = [err]
-                    else:
-                        pref = [err] if err < 0.1 else []
-                else:
-                    if ssum < 50:
-                        pref = [err]
-                    else:
-                        pref = [err] if err < 0.1 else []
-                if not pref:
-                    continue
-
-                # percentile filter on this single‐element list is trivial,
-                # but for consistency let's treat uniformly:
-                q0 = np.percentile(pref, 0)
-                q50 = np.percentile(pref, 50)
-                filt = [e for e in pref if q0 <= e <= q50]
-                if not filt:
-                    continue
-
-                # store
-                fit_data[key]["x"].extend([ssum] * len(filt))
-                fit_data[key]["y"].extend(filt)
-
-        # now for this family, do the fits over each key
-        betas = []
-        beta_errs = []
-        for key in all_keys:
-            fx = np.array(fit_data[key]["x"], dtype=float)
-            fy = np.array(fit_data[key]["y"], dtype=float)
-
-            if fx.size < 2 or fy.size < 2:
-                betas.append(np.nan)
-                beta_errs.append(np.nan)
-                continue
-
-            # sort to stabilize the fit
-            idx = np.argsort(fx)
-            fx, fy = fx[idx], fy[idx]
-
-            try:
-                (_, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
-                sigma_b = np.sqrt(pcov[1, 1]) if pcov.shape == (2, 2) else np.nan
-            except Exception:
-                b_fit = np.nan
-                sigma_b = np.nan
-
-            betas.append(float(b_fit))
-            beta_errs.append(float(sigma_b))
-
-        results[fam] = (
-            np.array(all_keys,   dtype=float),
-            np.array(betas,      dtype=float),
-            np.array(beta_errs,  dtype=float),
-        )
-
-    return results
-
-
-import numpy as np
-from scipy.optimize import curve_fit
-
-def compute_betas_from_errors(
-    errors_by_time: dict,
-    scaling_param: str = 'spreading',
-    include_families: list = None,
-    exclude_x_scale: set = None,
+    exclude_x_scale: set = [8,16,32,64,128],
     exclude_above_one: bool = False,
 ):
     """
@@ -593,29 +268,29 @@ def compute_betas_from_errors(
                 
                 if scaling_param == 'times':
                     if exclude_above_one:
-                        if ssum==0.1:
-                            pref = [e for e in errs_list if e < 1.25]
+                        if ssum==0.01:
+                            pref = [e for e in errs_list if e < 10.0]
                         else:
-                            pref = [e for e in errs_list if e < 1.0]
+                            pref = [e for e in errs_list if e < 10.0]
                         if len(pref) < 2:
                             continue
                     elif ssum < 2:
                         pref = errs_list.copy()
                     else:
-                        pref = [e for e in errs_list if e < 0.1]
+                        pref = [e for e in errs_list if e < 10.0]
                 else:
                     #pref = errs_list.copy()
                     if ssum < 50:
                         pref = errs_list.copy()
                     else:
-                        pref = [e for e in errs_list if e < 0.1]
+                        pref = [e for e in errs_list if e < 10.0]
 
-                if len(pref) < 2:
+                if len(pref) < 1:
                     continue
 
                 # (c) percentile filter
                 q0 = np.percentile(pref, 0)
-                q50 = np.percentile(pref, 50)
+                q50 = np.percentile(pref, 100)
                 filt = [e for e in pref if q0 <= e <= q50]
                 #if len(filt) < 2:
                 #    continue
@@ -642,6 +317,110 @@ def compute_betas_from_errors(
                 sigma_b = np.sqrt(pcov[1, 1]) if pcov.shape == (2, 2) else np.nan
             except:
                 b_fit = sigma_b = np.nan
+
+            betas.append(float(b_fit))
+            beta_errs.append(float(sigma_b))
+
+        results[fam] = (
+            np.array(all_keys,   dtype=float),
+            np.array(betas,      dtype=float),
+            np.array(beta_errs,  dtype=float),
+        )
+
+    return results
+
+
+
+import numpy as np
+from scipy.optimize import curve_fit
+from scipy.stats import scoreatpercentile
+
+def compute_betas_from_errors(
+    errors_by_time: dict,
+    scaling_param: str = 'spreading',
+    include_families: list = None,
+    exclude_x_scale: set = None,
+    exclude_above_one: bool = False,
+    verbose: bool = False,
+):
+    """
+    Computes power-law exponents (betas) for each family and key.
+    Model: error ≈ a * (sum(time_stamps))^b
+
+    Returns:
+        dict: family → (keys_sorted, betas_array, beta_errs_array)
+    """
+    if exclude_x_scale is None:
+        exclude_x_scale = set()
+
+    def _power(x, a, b):
+        return a * np.power(x, b)
+
+    all_keys = sorted({key for errs in errors_by_time.values() for (_, _, key) in errs})
+    all_fams = sorted({
+        fam for errs in errors_by_time.values()
+             for (_, fam, _) in errs
+             if include_families is None or fam in include_families
+    })
+
+    results = {}
+
+    for fam in all_fams:
+        fit_data = {k: {"x": [], "y": []} for k in all_keys}
+
+        for time_tuple, recs in errors_by_time.items():
+            ssum = round(sum(time_tuple), 8)
+            if ssum in exclude_x_scale:
+                continue
+
+            for err, fam0, key in recs:
+                if fam0 != fam:
+                    continue
+
+                if scaling_param == 'times' and exclude_above_one:
+                    if err >= 10.0:
+                        continue
+
+                if scaling_param == 'spreading':
+                    keep = err < 10.0 if ssum >= 50 else True
+                else:
+                    keep = err < 10.0 if ssum >= 2 else True
+
+                if not keep:
+                    continue
+
+                fit_data[key]["x"].append(ssum)
+                fit_data[key]["y"].append(err)
+
+        betas, beta_errs = [], []
+        for key in all_keys:
+            fx = np.array(fit_data[key]["x"], float)
+            fy = np.array(fit_data[key]["y"], float)
+
+            if fx.size < 2 or fy.size < 2:
+                betas.append(np.nan)
+                beta_errs.append(np.nan)
+                continue
+
+            # Simple percentile filtering (optional)
+            q0 = scoreatpercentile(fy, 0)
+            q50 = scoreatpercentile(fy, 100)
+            filt_mask = (fy >= q0) & (fy <= q50)
+            fx, fy = fx[filt_mask], fy[filt_mask]
+
+            idx = np.argsort(fx)
+            fx, fy = fx[idx], fy[idx]
+
+            try:
+                (_, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
+                sigma_b = np.sqrt(pcov[1, 1]) if pcov.shape == (2, 2) else np.nan
+            except Exception as e:
+                if verbose:
+                    print(f"[WARN] Curve fit failed for family={fam}, key={key}: {e}")
+                b_fit, sigma_b = np.nan, np.nan
+
+            if verbose:
+                print(f"[DEBUG] {fam} | key={key}: beta={b_fit:.3f} ± {sigma_b:.3f} (N={len(fx)})")
 
             betas.append(float(b_fit))
             beta_errs.append(float(sigma_b))
