@@ -237,7 +237,7 @@ class DataGen(Dataset):
 
 
 
-class DataGen(Dataset):
+class DataGen2qubitRot(Dataset):
     def __init__(
         self,
         times: list,
