@@ -160,7 +160,7 @@ def main():
     p.add_argument("--delta-t",      type=float, default=0.02,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
-    p.add_argument("--lbfgs-steps", type=int, default=30,
+    p.add_argument("--lbfgs-steps", type=int, default=5,
                help="Number of L-BFGS fine-tuning steps after AdamW training (0 to disable)")
 
     args = p.parse_args()
