@@ -328,7 +328,8 @@ def main():
 
             if fixed["lbfgs_steps"] > 0:
                 for _ in range(fixed["lbfgs_steps"]):
-                    lbfgs.step(closure)
+                    loss = lbfgs.step(closure)
+                    loss_hist.append(loss.item())  # Append to existing loss history
 
 
             del ds, predictor, xb, tb, bb, ib
