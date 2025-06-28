@@ -9,6 +9,129 @@ def apply_kron(term):
         result = torch.kron(result, mat)
     return result
 
+def generate_hamiltonian_parameters(
+    family: str,
+    num_qubits: int,
+    coupling_type: str = "anisotropic_normal",
+    h_field_type: str = "random",
+    coupling_std: float = 0.1,
+    h_field_std: float = 0.1,
+    decay_type: str = "power_law",       # ← New
+    decay_rate: float = 1.0,      # ← New
+    **kwargs
+) -> dict:
+    import numpy as np
+    import re
+
+    # Parse family name (e.g. 'XYZ2' → base_name='XYZ', include_higher_order=2)
+    m = re.fullmatch(r"([A-Za-z]+?)(\d+)$", family)
+    if m:
+        base_name = m.group(1)
+        include_higher_order = int(m.group(2))
+    else:
+        base_name = family
+        include_higher_order = 0
+
+    if base_name not in {"Heisenberg", "XYZ"}:
+        raise ValueError(f"Unknown base family '{base_name}'; only 'Heisenberg' or 'XYZ' are allowed.")
+
+    # Define decay function (new)
+    def get_decay_factor(distance):
+        if decay_type == "power_law":
+            return 1.0 / (distance ** decay_rate)
+        elif decay_type == "exponential":
+            return np.exp(-distance / decay_rate)
+        else:
+            return 1.0  # No decay
+
+    # Generate J: nearest-neighbor couplings
+    if coupling_type == "random":
+        J = np.random.uniform(-1, 1, size=(num_qubits, 3))
+    elif coupling_type == "uniform_random":
+        uni = np.random.uniform(-1, 1)
+        J = np.full((num_qubits, 3), uni)
+    elif coupling_type == "normal":
+        J = np.random.normal(1.0, coupling_std, size=(num_qubits, 3))
+    elif coupling_type == "anisotropic":
+        base = np.random.uniform(-1, 1, size=3)
+        J = np.tile(base, (num_qubits, 1))
+    elif coupling_type == "anisotropic_normal":
+        means = np.random.uniform(-1.0, 1.0, size=3)
+        J = np.random.normal(means, coupling_std, size=(num_qubits, 3))
+    else:
+        raise ValueError(f"Unknown coupling_type = {coupling_type}")
+
+    # Apply decay to J for NN (distance = 1)
+    J *= get_decay_factor(1)
+
+    # On-site X field
+    if h_field_type == "random":
+        h_x = np.random.uniform(-1, 1, size=(num_qubits,))
+    elif h_field_type == "uniform_random":
+        uni = np.random.uniform(-1, 1)
+        h_x = np.full((num_qubits,), uni)
+    elif h_field_type == "normal":
+        h_x = np.random.normal(1.0, h_field_std, size=(num_qubits,))
+    elif h_field_type == "standard":
+        h_x = np.ones((num_qubits,))
+    else:
+        raise ValueError(f"Unknown h_field_type = {h_field_type}")
+
+    h_y = None
+    h_z = None
+    if include_higher_order >= 2:
+        if h_field_type == "random":
+            h_y = np.random.uniform(-1, 1, size=(num_qubits,))
+            h_z = np.random.uniform(-1, 1, size=(num_qubits,))
+        elif h_field_type == "uniform_random":
+            uni = np.random.uniform(-1, 1)
+            h_y = np.full((num_qubits,), uni)
+            h_z = np.full((num_qubits,), uni)
+        elif h_field_type == "normal":
+            h_y = np.random.normal(1.0, h_field_std, size=(num_qubits,))
+            h_z = np.random.normal(1.0, h_field_std, size=(num_qubits,))
+        elif h_field_type == "standard":
+            h_y = np.ones((num_qubits,))
+            h_z = np.ones((num_qubits,))
+
+    # Next-nearest-neighbor K
+    K = None
+    if include_higher_order >= 2:
+        if coupling_type in {"random", "uniform_random"}:
+            K = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
+        elif coupling_type == "normal":
+            K = np.random.normal(1.0, coupling_std, size=(num_qubits - 2, 3))
+        elif coupling_type == "anisotropic":
+            baseK = np.random.uniform(-1, 1, size=3)
+            K = np.tile(baseK, (num_qubits - 2, 1))
+        elif coupling_type == "anisotropic_normal":
+            meansK = np.random.uniform(-1.0, 1.0, size=3)
+            K = np.random.normal(meansK, coupling_std, size=(num_qubits - 2, 3))
+        else:
+            K = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
+
+        # Apply decay for K at distance = 2
+        K *= get_decay_factor(2)
+
+    # 3-body L terms
+    L = None
+    if include_higher_order >= 3:
+        L = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
+        # Apply decay for 3-body terms (max distance = 2)
+        L *= get_decay_factor(2)
+
+    return {
+        "base_family": base_name,
+        "include_higher_order": include_higher_order,
+        "J": np.array(J),
+        "h_x": np.array(h_x),
+        "h_y": np.array(h_y) if h_y is not None else None,
+        "h_z": np.array(h_z) if h_z is not None else None,
+        "K": np.array(K) if K is not None else None,
+        "L": np.array(L) if L is not None else None
+    }
+
+
 
 def generate_hamiltonian_parameters(
     family: str,
@@ -131,128 +254,6 @@ def generate_hamiltonian_parameters(
         "L": np.array(L) if (L is not None) else None
     }
 
-
-def generate_hamiltonian_parameters(
-    family: str,
-    num_qubits: int,
-    coupling_type: str = "anisotropic_normal",
-    h_field_type: str = "random",
-    coupling_std: float = 0.1,
-    h_field_std: float = 0.1,
-    decay_type: str = "power_law",       # ← New
-    decay_rate: float = 1.0,      # ← New
-    **kwargs
-) -> dict:
-    import numpy as np
-    import re
-
-    # Parse family name (e.g. 'XYZ2' → base_name='XYZ', include_higher_order=2)
-    m = re.fullmatch(r"([A-Za-z]+?)(\d+)$", family)
-    if m:
-        base_name = m.group(1)
-        include_higher_order = int(m.group(2))
-    else:
-        base_name = family
-        include_higher_order = 0
-
-    if base_name not in {"Heisenberg", "XYZ"}:
-        raise ValueError(f"Unknown base family '{base_name}'; only 'Heisenberg' or 'XYZ' are allowed.")
-
-    # Define decay function (new)
-    def get_decay_factor(distance):
-        if decay_type == "power_law":
-            return 1.0 / (distance ** decay_rate)
-        elif decay_type == "exponential":
-            return np.exp(-distance / decay_rate)
-        else:
-            return 1.0  # No decay
-
-    # Generate J: nearest-neighbor couplings
-    if coupling_type == "random":
-        J = np.random.uniform(-1, 1, size=(num_qubits, 3))
-    elif coupling_type == "uniform_random":
-        uni = np.random.uniform(-1, 1)
-        J = np.full((num_qubits, 3), uni)
-    elif coupling_type == "normal":
-        J = np.random.normal(1.0, coupling_std, size=(num_qubits, 3))
-    elif coupling_type == "anisotropic":
-        base = np.random.uniform(-1, 1, size=3)
-        J = np.tile(base, (num_qubits, 1))
-    elif coupling_type == "anisotropic_normal":
-        means = np.random.uniform(-1.0, 1.0, size=3)
-        J = np.random.normal(means, coupling_std, size=(num_qubits, 3))
-    else:
-        raise ValueError(f"Unknown coupling_type = {coupling_type}")
-
-    # Apply decay to J for NN (distance = 1)
-    J *= get_decay_factor(1)
-
-    # On-site X field
-    if h_field_type == "random":
-        h_x = np.random.uniform(-1, 1, size=(num_qubits,))
-    elif h_field_type == "uniform_random":
-        uni = np.random.uniform(-1, 1)
-        h_x = np.full((num_qubits,), uni)
-    elif h_field_type == "normal":
-        h_x = np.random.normal(1.0, h_field_std, size=(num_qubits,))
-    elif h_field_type == "standard":
-        h_x = np.ones((num_qubits,))
-    else:
-        raise ValueError(f"Unknown h_field_type = {h_field_type}")
-
-    h_y = None
-    h_z = None
-    if include_higher_order >= 2:
-        if h_field_type == "random":
-            h_y = np.random.uniform(-1, 1, size=(num_qubits,))
-            h_z = np.random.uniform(-1, 1, size=(num_qubits,))
-        elif h_field_type == "uniform_random":
-            uni = np.random.uniform(-1, 1)
-            h_y = np.full((num_qubits,), uni)
-            h_z = np.full((num_qubits,), uni)
-        elif h_field_type == "normal":
-            h_y = np.random.normal(1.0, h_field_std, size=(num_qubits,))
-            h_z = np.random.normal(1.0, h_field_std, size=(num_qubits,))
-        elif h_field_type == "standard":
-            h_y = np.ones((num_qubits,))
-            h_z = np.ones((num_qubits,))
-
-    # Next-nearest-neighbor K
-    K = None
-    if include_higher_order >= 2:
-        if coupling_type in {"random", "uniform_random"}:
-            K = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
-        elif coupling_type == "normal":
-            K = np.random.normal(1.0, coupling_std, size=(num_qubits - 2, 3))
-        elif coupling_type == "anisotropic":
-            baseK = np.random.uniform(-1, 1, size=3)
-            K = np.tile(baseK, (num_qubits - 2, 1))
-        elif coupling_type == "anisotropic_normal":
-            meansK = np.random.uniform(-1.0, 1.0, size=3)
-            K = np.random.normal(meansK, coupling_std, size=(num_qubits - 2, 3))
-        else:
-            K = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
-
-        # Apply decay for K at distance = 2
-        K *= get_decay_factor(2)
-
-    # 3-body L terms
-    L = None
-    if include_higher_order >= 3:
-        L = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
-        # Apply decay for 3-body terms (max distance = 2)
-        L *= get_decay_factor(2)
-
-    return {
-        "base_family": base_name,
-        "include_higher_order": include_higher_order,
-        "J": np.array(J),
-        "h_x": np.array(h_x),
-        "h_y": np.array(h_y) if h_y is not None else None,
-        "h_z": np.array(h_z) if h_z is not None else None,
-        "K": np.array(K) if K is not None else None,
-        "L": np.array(L) if L is not None else None
-    }
 
 
 def generate_hamiltonian(
