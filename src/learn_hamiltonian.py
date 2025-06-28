@@ -336,13 +336,13 @@ def main():
                 for step in range(fixed["lbfgs_steps"]):
                     loss = lbfgs.step(closure)
                     lbfgs_loss_hist.append(loss)
-                    print(f"[L-BFGS step {step+1}] Loss: {loss:.6f}")
+                    #print(f"[L-BFGS step {step+1}] Loss: {loss:.6f}")
 
                     if step >= fixed["window"] + 5:
                         recent = np.mean(lbfgs_loss_hist[-fixed["window"]:])
                         prev = np.mean(lbfgs_loss_hist[-(fixed["window"]+5):-5])
                         if abs(recent - prev) < fixed["tolerance"]:
-                            print("[L-BFGS] Early stopping due to convergence.")
+                            #print("[L-BFGS] Early stopping due to convergence.")
                             break
                         
             loss_hist.extend(lbfgs_loss_hist)
