@@ -160,6 +160,9 @@ def main():
     p.add_argument("--delta-t",      type=float, default=0.02,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
+    p.add_argument("--lbfgs-steps", type=int, default=5,
+               help="Number of L-BFGS fine-tuning steps after AdamW training (0 to disable)")
+
     args = p.parse_args()
 
     # Expand comma‐lists into Python lists
@@ -181,6 +184,7 @@ def main():
         "window":              args.window,
         "tolerance":           args.tolerance,
         "delta_t":             args.delta_t,
+        "lbfgs_steps":         args.lbfgs_steps,
         "families":            fixed_families,
         "coupling_type":       "anisotropic_normal",
         "h_field_type":        "random",
@@ -295,6 +299,37 @@ def main():
 
             torch.save(predictor.state_dict(), os.path.join(subdir, model_filename))
             save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
+            
+            # === L-BFGS FINE-TUNING OF OUTPUT LAYER ONLY ===
+
+            # Freeze all layers except the output layer
+            for i, layer in enumerate(predictor.network):
+                if isinstance(layer, nn.Linear) and i != len(predictor.network) - 1:
+                    layer.weight.requires_grad = False
+                    layer.bias.requires_grad = False
+
+            output_layer_params = list(predictor.network[-1].parameters())
+            lbfgs = torch.optim.LBFGS(output_layer_params, lr=0.5, max_iter=20)
+
+            # Use your existing max batch size function
+            max_bs = get_max_batch_size(fixed["num_qubits"])
+            lbfgs_loader = DataLoader(ds, batch_size=max_bs, shuffle=False)
+
+            # Collect all batches into one closure pass (as L-BFGS requires full gradient)
+            def closure():
+                lbfgs.zero_grad()
+                total_loss = 0.0
+                for xb, tb, bb, ib in lbfgs_loader:
+                    xb, tb, bb, ib = (t.to(fixed["device"]) for t in (xb, tb, bb, ib))
+                    loss = criterion(predictor, tb, ib, xb, bb)
+                    loss.backward()
+                    total_loss += loss.item()
+                return total_loss
+
+            if fixed["lbfgs_steps"] > 0:
+                for _ in range(fixed["lbfgs_steps"]):
+                    lbfgs.step(closure)
+
 
             del ds, predictor, xb, tb, bb, ib
             del criterion, optimizer, loss
