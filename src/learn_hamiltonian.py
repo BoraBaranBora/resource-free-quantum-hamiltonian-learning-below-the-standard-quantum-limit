@@ -155,12 +155,12 @@ def main():
     p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
-    p.add_argument("--window",       type=int, default=20,  help="Early‐stop window")
+    p.add_argument("--window",       type=int, default=15,  help="Early‐stop window")
     p.add_argument("--tolerance",    type=float, default=1e-5, help="Convergence tolerance")
     p.add_argument("--delta-t",      type=float, default=0.02,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
-    p.add_argument("--lbfgs-steps", type=int, default=100,
+    p.add_argument("--lbfgs-steps", type=int, default=30,
                help="Number of L-BFGS fine-tuning steps after AdamW training (0 to disable)")
 
     args = p.parse_args()
