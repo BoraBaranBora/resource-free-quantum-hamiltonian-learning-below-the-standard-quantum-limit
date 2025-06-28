@@ -160,7 +160,7 @@ def main():
     p.add_argument("--delta-t",      type=float, default=0.02,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
-    p.add_argument("--lbfgs-steps", type=int, default=10,
+    p.add_argument("--lbfgs-steps", type=int, default=100,
                help="Number of L-BFGS fine-tuning steps after AdamW training (0 to disable)")
 
     args = p.parse_args()
@@ -325,12 +325,27 @@ def main():
                     loss.backward()
                     total_loss += loss.item()
                 return total_loss
+            
+            lbfgs_loss_hist = []
 
             if fixed["lbfgs_steps"] > 0:
-                for _ in range(fixed["lbfgs_steps"]):
-                    loss = lbfgs.step(closure)
-                    loss_hist.append(loss)  # Append to existing loss history
+                #for _ in range(fixed["lbfgs_steps"]):
+                #    loss = lbfgs.step(closure)
+                #    loss_hist.append(loss)  # Append to existing loss history
 
+                for step in range(fixed["lbfgs_steps"]):
+                    loss = lbfgs.step(closure)
+                    lbfgs_loss_hist.append(loss)
+                    print(f"[L-BFGS step {step+1}] Loss: {loss:.6f}")
+
+                    if step >= fixed["window"] + 5:
+                        recent = np.mean(lbfgs_loss_hist[-fixed["window"]:])
+                        prev = np.mean(lbfgs_loss_hist[-(fixed["window"]+5):-5])
+                        if abs(recent - prev) < fixed["tolerance"]:
+                            print("[L-BFGS] Early stopping due to convergence.")
+                            break
+                        
+            loss_hist.extend(lbfgs_loss_hist)
 
             del ds, predictor, xb, tb, bb, ib
             del criterion, optimizer, loss
