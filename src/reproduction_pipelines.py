@@ -21,7 +21,7 @@ DEMOPATH = os.path.dirname(os.path.abspath(__file__))
 DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
-MEASUREMENTS_SWEEP1 = 25   # for SWEEP 1
+MEASUREMENTS_SWEEP1 = 50   # for SWEEP 1
 MEASUREMENTS_SWEEP2 = 50  # for SWEEP 2 and SWEEP 3
 SHOTS               = 1
 STEPS               = 8
