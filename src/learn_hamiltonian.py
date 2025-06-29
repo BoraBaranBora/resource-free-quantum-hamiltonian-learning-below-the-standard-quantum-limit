@@ -50,7 +50,7 @@ def get_max_batch_size(nq, overhead_gb=6, round_to=50, safety=0.8):
         return 0
 
     # Estimate bytes per sample: ~48 * 4^nq
-    log_ps = np.log( *20*48.0) + nq * np.log(4.0)
+    log_ps = np.log( 9*48.0) + nq * np.log(4.0)
     #if log_ps > np.log(avail + 1e-9):
     #    return 0
 
