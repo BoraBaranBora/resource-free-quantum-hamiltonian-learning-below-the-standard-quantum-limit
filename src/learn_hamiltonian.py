@@ -152,7 +152,7 @@ def main():
                    help="Comma‐separated Hamiltonian families, e.g. Heisenberg,XXZ,TFIM")
 
     # Fixed settings
-    p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
+    p.add_argument("--num-qubits",   type=int, default=6,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=15,  help="Early‐stop window")
