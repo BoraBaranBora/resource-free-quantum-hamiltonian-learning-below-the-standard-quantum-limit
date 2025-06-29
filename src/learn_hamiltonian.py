@@ -300,52 +300,6 @@ def main():
             torch.save(predictor.state_dict(), os.path.join(subdir, model_filename))
             save_json({"loss_history": loss_hist}, os.path.join(subdir, loss_filename))
             
-            # === L-BFGS FINE-TUNING OF OUTPUT LAYER ONLY ===
-
-            # Freeze all layers except the output layer
-            for i, layer in enumerate(predictor.network):
-                if isinstance(layer, nn.Linear) and i != len(predictor.network) - 1:
-                    layer.weight.requires_grad = False
-                    layer.bias.requires_grad = False
-
-            output_layer_params = list(predictor.network[-1].parameters())
-            lbfgs = torch.optim.LBFGS(output_layer_params, lr=0.5, max_iter=20)
-
-            # Use your existing max batch size function
-            max_bs = get_max_batch_size(fixed["num_qubits"])
-            lbfgs_loader = DataLoader(ds, batch_size=max_bs, shuffle=False)
-
-            # Collect all batches into one closure pass (as L-BFGS requires full gradient)
-            def closure():
-                lbfgs.zero_grad()
-                total_loss = 0.0
-                for xb, tb, bb, ib in lbfgs_loader:
-                    xb, tb, bb, ib = (t.to(fixed["device"]) for t in (xb, tb, bb, ib))
-                    loss = criterion(predictor, tb, ib, xb, bb)
-                    loss.backward()
-                    total_loss += loss.item()
-                return total_loss
-            
-            lbfgs_loss_hist = []
-
-            if fixed["lbfgs_steps"] > 0:
-                #for _ in range(fixed["lbfgs_steps"]):
-                #    loss = lbfgs.step(closure)
-                #    loss_hist.append(loss)  # Append to existing loss history
-
-                for step in range(fixed["lbfgs_steps"]):
-                    loss = lbfgs.step(closure)
-                    lbfgs_loss_hist.append(loss)
-                    #print(f"[L-BFGS step {step+1}] Loss: {loss:.6f}")
-
-                    if step >= fixed["window"] + 5:
-                        recent = np.mean(lbfgs_loss_hist[-fixed["window"]:])
-                        prev = np.mean(lbfgs_loss_hist[-(fixed["window"]+5):-5])
-                        if abs(recent - prev) < fixed["tolerance"]:
-                            #print("[L-BFGS] Early stopping due to convergence.")
-                            break
-                        
-            loss_hist.extend(lbfgs_loss_hist)
 
             del ds, predictor, xb, tb, bb, ib
             del criterion, optimizer, loss
