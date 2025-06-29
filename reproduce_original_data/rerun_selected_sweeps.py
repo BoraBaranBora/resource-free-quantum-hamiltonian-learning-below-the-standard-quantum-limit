@@ -217,15 +217,15 @@ from reproduction_pipelines import (
 #   to be re‐built from scratch by calling learn_hamiltonian.py.  If False,
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
-run_sweep1 = True    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
+run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
 run_sweep2 = False     # SWEEP 2: α‐sweep (spreading=50), measurements=25
-run_sweep3 = False     # SWEEP 3: nested α+spreading, measurements=25
+run_sweep3 = True     # SWEEP 3: nested α+spreading, measurements=25
 
 # ───────────────────────────────────────────────────────────────────────────────
 #   Specify which families to sweep (comma‐separated list).  For example:
 #     "Heisenberg", "XYZ2", "Heisenberg3,XYZ2", etc.
 # ───────────────────────────────────────────────────────────────────────────────
-chosen_families = "XYZ3" #"XYZ,XYZ2,XYZ3"
+chosen_families = "XYZ,XYZ2,XYZ3" #"XYZ,XYZ2,XYZ3"
 # ───────────────────────────────────────────────────────────────────────────────
 
 

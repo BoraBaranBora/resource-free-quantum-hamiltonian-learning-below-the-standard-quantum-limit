@@ -38,10 +38,46 @@ def reconstruct_density_matrix_from_lower(flattened_vector: torch.Tensor) -> tor
     return real_matrix
 
 
+def plot_hamiltonians(H1, H2, relative_error, family):
+    """
+    Plot the heatmaps of two Hamiltonian matrices (real parts only) side by side, 
+    with relative error displayed in the title of the Learned Hamiltonian.
+
+    Parameters:
+    H1 (torch.Tensor): Original Hamiltonian matrix.
+    H2 (torch.Tensor): Learned Hamiltonian matrix.
+    relative_error (float): Relative error between the two Hamiltonians.
+    """
+    H1_real = H1.real.detach().cpu().numpy()
+    H2_real = H2.real.detach().cpu().numpy()
+    
+    plt.figure(figsize=(14, 6))
+    
+    # Heatmap for the original Hamiltonian
+    plt.subplot(1, 2, 1)
+    plt.imshow(H1_real, cmap='RdBu', interpolation='none', aspect='auto')
+    plt.colorbar(label="Real Part")
+    plt.title("Original Hamiltonian")
+    plt.xlabel("Matrix Index")
+    plt.ylabel("Matrix Index")
+    
+    # Heatmap for the learned Hamiltonian
+    plt.subplot(1, 2, 2)
+    plt.imshow(H2_real, cmap='RdBu', interpolation='none', aspect='auto')
+    plt.colorbar(label="Real Part")
+    plt.title(f"Learned {family} Hamiltonian\n(Relative Error: {relative_error:.2e})")
+    plt.xlabel("Matrix Index")
+    plt.ylabel("Matrix Index")
+    
+    plt.tight_layout()
+    plt.show()
+
 def collect_recovery_errors_from_data(
     base_run_dir: str,
     scaling_param: str = "times",      # "times" or "spreading"
-    group_by: str = "spreading"          # "alpha", "times", or "spreading"
+    group_by: str = "spreading",          # "alpha", "times", or "spreading"
+    plot_only_spreadings: list[float] = [],  # Numerical values
+    plot_only_families: list[str] = ["XYZ3"]       # Family names
 ) -> dict:
     """
     Walk through each “combo” subdirectory under base_run_dir. For each Hamiltonian:
@@ -201,9 +237,25 @@ def collect_recovery_errors_from_data(
                 out_flat = predictor(batch_size=1).squeeze(0)
                 rec_matrix = reconstruct_density_matrix_from_lower(out_flat).to(torch.complex64) / 1.0 # rescale, because loss had factor of 0.25
                 error = torch.mean((rec_matrix - original_ham).abs()).item()
+
+                #error = error / original_ham.abs().mean().item()
                 #error = torch.mean(((rec_matrix - original_ham).abs() / original_ham.abs().clamp(min=1e-8))).item()
                 #error = torch.norm(rec_matrix - original_ham) / torch.norm(original_ham)
                 #error = torch.mean((rec_matrix - original_ham).abs()) / torch.mean(original_ham.abs())
+                #mask = original_ham != 0
+                #error = torch.norm((rec_matrix - original_ham)[mask]) / torch.norm(original_ham[mask])
+                print(f'rec_matrix size:{rec_matrix.shape}')
+                should_plot = True
+                if plot_only_spreadings is not None:
+                    should_plot &= any(
+                        s in plot_only_spreadings for s in spreading_values
+                    )
+                if plot_only_families is not None:
+                    should_plot &= true_family in plot_only_families
+
+                if should_plot:
+                    plot_hamiltonians(original_ham, rec_matrix, error, true_family)
+                                    
                 print(f'error: {error}')
 
             # ─── Decide the group_key based on group_by ───
