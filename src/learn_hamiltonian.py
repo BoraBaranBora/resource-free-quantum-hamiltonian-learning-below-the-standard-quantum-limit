@@ -157,7 +157,7 @@ def main():
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=15,  help="Early‐stop window")
     p.add_argument("--tolerance",    type=float, default=1e-5, help="Convergence tolerance")
-    p.add_argument("--delta-t",      type=float, default=0.03,  help="Δt for time steps")
+    p.add_argument("--delta-t",      type=float, default=0.01,  help="Δt for time steps")
     p.add_argument("--output-dir",   type=str, required=True,
                    help="Where to dump all outputs")
     p.add_argument("--lbfgs-steps", type=int, default=5,
