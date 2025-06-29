@@ -63,7 +63,7 @@ def get_max_batch_size(nq, overhead_gb=6, round_to=50, safety=0.8):
     #return max(bs, 1)
 
     bs = int(
-        max(
+        min(
             np.exp(np.log(avail) - log_ps) * safety / (2 ** (nq / 5)),
             30_000 / (2 ** (nq / 5))
         )
