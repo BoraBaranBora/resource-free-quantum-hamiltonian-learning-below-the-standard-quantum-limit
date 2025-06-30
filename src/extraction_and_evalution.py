@@ -95,10 +95,11 @@ def collect_recovery_errors_from_data(
     """
     if scaling_param not in {"times", "spreading"}:
         raise ValueError("scaling_param must be 'times' or 'spreading'")
-    if group_by not in {"alpha", "times", "spreading"}:
-        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
+    if group_by not in {"alpha", "times", "spreading", "num_qubits"}:
+        raise ValueError("group_by must be one of 'alpha', 'times', 'spreading', or 'num_qubits'")
     if group_by == scaling_param:
         raise ValueError("group_by must differ from scaling_param")
+
 
     errors_by_scaling = {}
 
@@ -263,8 +264,13 @@ def collect_recovery_errors_from_data(
                 group_key = alpha
             elif group_by == "spreading":
                 group_key = spreading_tuple
-            else:  # group_by == "times"
+            elif group_by == "times":
                 group_key = time_tuple
+            elif group_by == "num_qubits":
+                group_key = num_qubits
+            else:
+                raise ValueError(f"Unknown group_by value: {group_by}")
+
 
             # Append (error, true_family, group_key) under scaling_tuple
             errors_by_scaling[scaling_tuple].append((error, true_family, group_key))
