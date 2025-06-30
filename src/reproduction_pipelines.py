@@ -29,10 +29,12 @@ STEPS               = 8
 STEPS_SWEEP1        = 15
 
 # Sweep lists
-SPREADINGS_SWEEP1 = [50]#[1, 2, 4, 8, 16, 32, 64, 128]
+SPREADINGS_SWEEP1 = [100]#[1, 2, 4, 8, 16, 32, 64, 128]
 SPREADINGS_SWEEP3 = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]##[1, 10, 25, 50, 100, 250, 500]# #  
 ALPHAS     = [1.0]#[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
+QUBIT_SIZES = [7,8,6,5,4,3]
+SPREADING_SWEEP4 = 100
 
 def run(cmd):
     """Helper to print and execute a subprocess command using the same Python interpreter."""
@@ -133,5 +135,27 @@ def reproduce_data_SWEEP3(base_folder: str, families: str):
             "--shots",        str(SHOTS),
             "--steps",        str(STEPS),                  # exactly 8 steps
             "--families",     families,                   # now passed in
+            "--output-dir",   base_folder
+        ])
+
+
+def reproduce_data_SWEEP4(base_folder: str, families: str):
+    """
+    Extended version of SWEEP 1 to run across multiple qubit sizes.
+    Each run's data is stored in its own timestamped subfolder under base_folder.
+    """
+    os.makedirs(base_folder, exist_ok=True)
+    step_list = ",".join(str(i) for i in range(1, STEPS_SWEEP1 + 1))
+
+    for nq in tqdm(QUBIT_SIZES, desc="Qubit Size Sweep"):
+        run([
+            sys.executable, DEMO,
+            "--alphas",       "1.0",                      # fixed α
+            "--spreadings",   str(SPREADING_SWEEP4),             # fixed spreading value
+            "--measurements", str(MEASUREMENTS_SWEEP1),   # fixed measurements
+            "--shots",        str(SHOTS),
+            "--steps",        step_list,                  # steps = 1…15
+            "--families",     families,
+            "--num-qubits",   str(nq),                    # sweep this
             "--output-dir",   base_folder
         ])

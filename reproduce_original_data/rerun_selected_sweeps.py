@@ -209,7 +209,8 @@ sys.path.insert(0, SRC_DIR)
 from reproduction_pipelines import (
     reproduce_data_SWEEP1,
     reproduce_data_SWEEP2,
-    reproduce_data_SWEEP3
+    reproduce_data_SWEEP3,
+    reproduce_data_SWEEP4
 )
 
 # ───────────────────────────────────────────────────────────────────────────────
@@ -217,9 +218,10 @@ from reproduction_pipelines import (
 #   to be re‐built from scratch by calling learn_hamiltonian.py.  If False,
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
-run_sweep1 = True    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
+run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
 run_sweep2 = False     # SWEEP 2: α‐sweep (spreading=50), measurements=25
 run_sweep3 = False     # SWEEP 3: nested α+spreading, measurements=25
+run_sweep4 = True
 
 # ───────────────────────────────────────────────────────────────────────────────
 #   Specify which families to sweep (comma‐separated list).  For example:
@@ -241,6 +243,8 @@ def main():
     first_folder  = os.path.join(THIS_DIR, "first_parameter_sweep_data")
     second_folder = os.path.join(THIS_DIR, "second_parameter_sweep_data")
     third_folder  = os.path.join(THIS_DIR, "third_parameter_sweep_data")
+    fourth_folder  = os.path.join(THIS_DIR, "third_parameter_sweep_data")
+
 
     if run_sweep1:
         print("→ Generating SWEEP 1 data (spreading sweep, measurements=50)…")
@@ -253,11 +257,19 @@ def main():
     if run_sweep3:
         print("→ Generating SWEEP 3 data (nested α+spreading, measurements=25)…")
         reproduce_data_SWEEP3(third_folder, chosen_families)
+        
+    if run_sweep4:
+        print("→ Generating SWEEP 4 data (qubit number sweep, measurements=25)…")
+        reproduce_data_SWEEP4(fourth_folder, chosen_families)
+
+
 
     print("\nrun_selected.py finished. Check these directories for generated data:")
     print("  ", first_folder)
     print("  ", second_folder)
     print("  ", third_folder)
+    print("  ", fourth_folder)
+
 
 
 if __name__ == "__main__":
