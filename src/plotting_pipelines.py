@@ -23,7 +23,8 @@ from plotting_utils import (
     plot_betas_vs_alpha_alternative,
     plot_betas_vs_alpha_per_family,
     plot_dbetadalpha,
-    plot_beta_trends_overlay
+    plot_beta_trends_overlay,
+    plot_errors_by_qubit_number
 )
 
 
@@ -75,7 +76,7 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
     plot_errors_by_spreadings(
         combined_errors,
         include_families=["XYZ3"],
-        exclude_x_scale=None,
+        exclude_x_scale=[],
         label_prefix="P"
     )
 
@@ -84,7 +85,7 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
         combined_errors,
         scaling_param="times",
         include_families=["XYZ","XYZ2","XYZ3"],
-        exclude_x_scale=None,
+        exclude_x_scale= None,
         exclude_above_one =True
     )
     plot_beta_trends_per_family(
@@ -409,14 +410,15 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
         combined_errors,
         scaling_param="spreading",
         include_families=None,
-        exclude_x_scale=None,
+        exclude_x_scale=[8],
         exclude_above_one=False
     )
 
     # (3) Plot β vs α per family
     plot_betas_vs_alpha_per_family(
         results,
-        label_prefix="α"
+        exclude_alphas=[]
+        #label_prefix="α"
     )
 
     # (4) Print α → β ± σ for each family
@@ -434,7 +436,7 @@ def run_sweep3_pipeline(base_pert: str, cache_dir: str):
 
 
 
-def run_sweep3_outer(base_pert: str, cache_dir: str):
+def run_sweep3_outer(base_pert: str, cache_dir: str, alpha_index=-1):
     """
     Sweep 3 Outer: pick one α (largest) and plot Error vs ∑(spreading).
     Expects cached errors under {cache_dir}/sweep3_errors.pkl.
@@ -456,15 +458,15 @@ def run_sweep3_outer(base_pert: str, cache_dir: str):
         for triplet in triplets
     })
     print("  Available α (Sweep 3 Outer):", unique_alphas)
-    alpha_value = unique_alphas[-1]
+    alpha_value = unique_alphas[alpha_index]
 
     plot_errors_for_outer(
         errors_by_scaling=combined_errors,
         scaling_param="spreading",
         group_by="alpha",
         outer_value=alpha_value,
-        include_families=None,
-        exclude_x_scale=None,
+        include_families= None,
+        exclude_x_scale=[1,2,4,8,16],
         show_theory=True
     )
     print("=== Finished Sweep 3 Outer ===\n")
@@ -738,3 +740,74 @@ def plot_dbetadalpha(
         )
 
     return ax
+
+
+def run_sweep4_pipeline(base1: str, cache_dir: str):
+    """
+    Sweep 1 — but grouping by qubit number instead of spreading.
+    Looks in `base1` (e.g., first_parameter_sweep_data/) and caches results in `cache_dir/sweep1_by_qubit_errors.pkl`.
+    """
+    print("\n=== Running Sweep 1 Pipeline (Grouped by Qubit Number) ===")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, "sweep1_by_qubit_errors.pkl")
+
+    if os.path.exists(cache_path):
+        print(f"  → Loading cached errors from {cache_path}")
+        with open(cache_path, "rb") as f:
+            combined_errors = pickle.load(f)
+    else:
+        print("  → No cached file; collecting errors from raw embeddings…")
+        run_dirs1 = sorted(d for d in os.listdir(base1) if d.startswith("run_"))
+        combined_errors = {}
+
+        for d in run_dirs1:
+            run_dir = os.path.join(base1, d)
+            if not os.path.isdir(run_dir):
+                print(f"  [WARN] Skipping {run_dir}: not found")
+                continue
+
+            errs = collect_recovery_errors_from_data(
+                run_dir,
+                scaling_param="times",
+                group_by="num_qubits"
+            )
+            for time_tuple, triplets in errs.items():
+                combined_errors.setdefault(time_tuple, []).extend(triplets)
+
+        if not combined_errors:
+            print("  No data found for Sweep 1 by qubit. Skipping.\n")
+            return
+
+        with open(cache_path, "wb") as f:
+            pickle.dump(combined_errors, f)
+        print(f"  → Wrote out {len(combined_errors)} keys to {cache_path}")
+
+    # 1) Error vs ∑(time), grouped/fitted by num_qubits
+    plot_errors_by_qubit_number(
+        combined_errors,
+        include_families=["XYZ3"],  # Adjust as needed
+        exclude_x_scale=[],
+        label_prefix="Q"
+    )
+
+    # 2) Compute β vs qubit number and plot
+    results = compute_betas_from_errors(
+        combined_errors,
+        scaling_param="times",
+        include_families=["XYZ", "XYZ2", "XYZ3"],
+        exclude_x_scale=None,
+        exclude_above_one=True
+    )
+    plot_beta_trends_per_family(
+        results,
+        label_prefix="Q"
+    )
+
+    # 3) Print β and its 1σ uncertainty for each family & key (qubit number)
+    print("\nQubits & β ± δβ by family:")
+    for fam, (keys, betas, errs) in results.items():
+        print(f"\nFamily: {fam}")
+        for k, b, err in zip(keys, betas, errs):
+            print(f"  {int(k)} qubits → {b:.3f} ± {err:.3f}")
+
+    print("=== Finished Sweep 1 Pipeline (Grouped by Qubit Number) ===\n")

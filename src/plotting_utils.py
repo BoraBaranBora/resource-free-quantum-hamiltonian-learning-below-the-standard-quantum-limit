@@ -20,12 +20,14 @@ from extraction_and_evalution import collect_recovery_errors_from_data
 
 # Define family style maps
 FAMILY_MARKERS = {
+    "Heisenberg": "o",
     "XYZ": "o",
     "XYZ2":        "s",
     "XYZ3":         "D",
     # Add more families as needed...
 }
 FAMILY_COLORS = {
+    "Heisenberg": "red",
     "XYZ": "red",
     "XYZ2":        "green",
     "XYZ3":         "purple",
@@ -125,8 +127,8 @@ def plot_errors_by_spreadings(
             label=f"{label_str} fit: y=({a_r}±{a_err_r}) x^{b_r}±{b_err_r}"
         )
 
-    plt.xlabel("Total Experiment Time (log)", fontsize=16)
-    plt.ylabel("Error (log)", fontsize=16)
+    plt.xlabel("Total Experiment Time ", fontsize=16)
+    plt.ylabel("Error ", fontsize=16)
     title_prefix = "Error vs Total Experiment Time"
     if label_prefix == "α":
         plt.title(f"{title_prefix} (grouped by α)", fontsize=18)
@@ -215,10 +217,10 @@ def plot_errors_by_spreadings(
             )
 
             # (2) build fit_data
-            if ssum==0.1:
-                pref = [e for e in rez if e < 1.25]
+            if ssum==0.01:
+                pref = [e for e in rez if e < 10.0]
             else:
-                pref = [e for e in rez if e < 1.0]
+                pref = [e for e in rez if e < 10.0]
             if len(pref) < 1:
                 continue
             q0 = scoreatpercentile(pref, 0)
@@ -262,12 +264,127 @@ def plot_errors_by_spreadings(
         )
 
     # (unchanged) finalize
-    plt.xlabel("Total Experiment Time (log)", fontsize=16)
-    plt.ylabel("Error (log)", fontsize=16)
+    plt.xlabel("Total Experiment Time ", fontsize=16)
+    plt.ylabel("Error ", fontsize=16)
     if label_prefix == "α":
         plt.title("Error vs Total Experiment Time (grouped by α)", fontsize=18)
     else:
         plt.title("Effect of Number of Spreadings on Learning Rate", fontsize=18)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    plt.grid(True, which='major', linestyle='-', linewidth=0.5, color='black', alpha=0.7)
+    plt.grid(True, which='minor', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
+    plt.legend(fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_errors_by_qubit_number(
+    errors_by_time: dict,
+    include_families: list = None,   # e.g. ["XYZ3"]
+    exclude_x_scale: set = None,
+    label_prefix: str = "Q"          # "Q" for qubits
+):
+    """
+    Plot “error vs. sum_of_time_stamps”, grouping/fitting by qubit number (third-tuple value),
+    but only for the given family or families.
+    """
+    def power_law(x, a, b):
+        return a * x**b
+
+    # === Filter by family ===
+    if include_families is not None:
+        filtered = {}
+        for t, recs in errors_by_time.items():
+            kept = [ (e,f,k) for (e,f,k) in recs if f in include_families ]
+            if kept:
+                filtered[t] = kept
+        errors_by_time = filtered
+        if not errors_by_time:
+            print("No data for families:", include_families)
+            return
+
+    plt.figure(figsize=(10, 7))
+    plt.xscale('log')
+    plt.yscale('log')
+
+    # Gather unique qubit numbers (keys)
+    unique_keys = sorted({ key for _, errs in errors_by_time.items() for _, _, key in errs })
+    cmap = plt.cm.viridis(np.linspace(0, 1, len(unique_keys)))
+    color_map = {k: cmap[i] for i, k in enumerate(unique_keys)}
+
+    fit_data = {}
+
+    # Scatter and bucket by qubit number
+    for time_stamps, errors in sorted(
+        errors_by_time.items(),
+        key=lambda x: round(sum(x[0]), 8)
+    ):
+        ssum = round(sum(time_stamps), 8)
+        bucket = {}
+        for rel_err, fam, key in errors:
+            bucket.setdefault(key, []).append(rel_err)
+
+        for key, rez in bucket.items():
+            if exclude_x_scale and (ssum in exclude_x_scale):
+                continue
+
+            label_str = f"{label_prefix}={key}"
+            already = label_str in plt.gca().get_legend_handles_labels()[1]
+
+            plt.scatter(
+                [ssum]*len(rez),
+                rez,
+                color=color_map[key],
+                edgecolor='black',
+                alpha=0.5,
+                s=80,
+                label=None  # Avoid duplicates in legend
+            )
+
+            pref = [e for e in rez if e < 10.0]
+            if len(pref) < 1:
+                continue
+            q0 = scoreatpercentile(pref, 0)
+            q50 = scoreatpercentile(pref, 50)
+            filt = [e for e in pref if q0 <= e <= q50]
+
+            fit_data.setdefault(key, {"x": [], "y": []})
+            fit_data[key]["x"].extend([ssum]*len(filt))
+            fit_data[key]["y"].extend(filt)
+
+    # Fit & plot one curve per qubit count
+    for key, data in fit_data.items():
+        fx = np.array(data["x"], float)
+        fy = np.array(data["y"], float)
+        if fx.size < 2 or fy.size < 2:
+            continue
+
+        popt, pcov = curve_fit(power_law, fx, fy, p0=(1, -0.5))
+        a, b = popt
+        a_err, b_err = np.sqrt(np.diag(pcov))
+
+        def round_sig(v, e):
+            sig = -int(np.floor(np.log10(e))) if e > 0 else 2
+            return round(v, sig), round(e, sig)
+
+        a_r, a_er = round_sig(a, a_err)
+        b_r, b_er = round_sig(b, b_err)
+
+        x_fit = np.linspace(fx.min(), fx.max(), 100)
+        y_fit = power_law(x_fit, a, b)
+        label_str = f"{label_prefix}={key}"
+
+        plt.plot(
+            x_fit, y_fit, '--',
+            color=color_map[key],
+            label=f"{label_str} fit: y=({a_r}±{a_er})·x^({b_r}±{b_er})"
+        )
+
+    # Finalize plot
+    plt.xlabel("Total Experiment Time", fontsize=16)
+    plt.ylabel("Error", fontsize=16)
+    plt.title("Error vs Total Experiment Time (grouped by Qubit Count)", fontsize=18)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.grid(True, which='major', linestyle='-', linewidth=0.5, color='black', alpha=0.7)
@@ -386,10 +503,10 @@ def plot_beta_trends(
     #plt.xscale('log')
 
     if label_prefix == "α":
-        xlabel = "α (log)"
+        xlabel = "α "
         plt.title("Error Scaling β vs. α", fontsize=16)
     else:
-        xlabel = "State Spreadings (log)"
+        xlabel = "State Spreadings "
         plt.title("Error Scaling β for Number of State Spreading", fontsize=16)
 
     plt.xlabel(xlabel, fontsize=15)
@@ -468,13 +585,16 @@ def plot_beta_trends_per_family(
     # (1) Theoretical β = –0.75 and ±1/8 band
     theo = -0.75
     half = 1/8
-    plt.axhline(theo, color='green', linestyle=':', linewidth=3, label=r"Theoretical β = –0.75")
+    plt.axhline(theo, color='green', linestyle=':', linewidth=3, label=r"Theoretical β(α=1.0) = –0.75")
     plt.axhspan(theo-half, theo+half, color='green', alpha=0.2, label=r"O(m_t⁻¹) band")
 
+    # add horizontal line at 0.5 labeled SQL
+    plt.axhline(-0.5, color='black', linestyle=':', linewidth=2, label='SQL')
+    
     # (2) Axis scale & labels
     #plt.xscale('log')
     if label_prefix == "α":
-        plt.xlabel("α (log)", fontsize=15)
+        plt.xlabel("α ", fontsize=15)
         plt.title("Error‐Scaling β vs. α", fontsize=16)
     else:
         plt.xlabel("State Spreadings", fontsize=15)
@@ -560,7 +680,7 @@ def plot_beta_trends_overlay(
 
     # Labels and title
     if label_prefix == "α":
-        ax.set_xlabel(r'$\alpha$ (log)', fontsize=15)
+        ax.set_xlabel(r'$\alpha$ ', fontsize=15)
         ax.set_title("Error‐Scaling β vs. α", fontsize=16)
     else:
         ax.set_xlabel("State Spreadings", fontsize=15)
@@ -575,443 +695,6 @@ def plot_beta_trends_overlay(
     plt.show()
 
     return fig, ax
-
-
-
-def plot_errors_for_outer(
-    errors_by_scaling: dict,
-    scaling_param: str,
-    group_by: str,
-    outer_value,
-    include_families: list = None,
-    exclude_x_scale: set = None,
-    show_theory: bool = True
-):
-    """
-    Generalized “Error vs. sum(inner_tuple)” plot for a single outer_value, 
-    with labels automatically derived from scaling_param and group_by.
-
-    Parameters
-    ----------
-    errors_by_scaling : dict
-        { inner_tuple → [ (rel_err, family, group_key), … ] }
-        where `inner_tuple` was determined by scaling_param, and `group_key` by group_by.
-
-    scaling_param : str
-        Either "times" or "spreading". Indicates which meta‐parameter was used as the dict key.
-        This affects the x‐axis label: 
-          - "times" → "Sum of Time Stamps (log)"
-          - "spreading" → "Sum of spreadingation (log)"
-
-    group_by : str
-        One of "alpha", "times", or "spreading". Indicates which meta‐parameter is used as the 
-        “outer” grouping. Affects the plot title:
-          - "alpha" → "α"
-          - "times" → "Time Stamps"
-          - "spreading" → "spreadingation"
-
-    outer_value : scalar or tuple
-        The specific group_key value to plot. All triplets whose third element == outer_value
-        will be included.
-
-    include_families : list or None
-        If provided, only errors whose `family` is in this list are included.
-
-    exclude_x_scale : set or None
-        If provided, any ssum = round(sum(inner_tuple), 8) in this set will be scattered
-        (all raw errs in gray) but excluded from fitting.
-
-    show_theory : bool
-        If True, overlay SQL (x^(-0.5)) and Heisenberg (x^(-1)) reference curves.
-
-    Behavior
-    --------
-    1) Filters triplets in errors_by_scaling where group_key == outer_value.
-    2) Groups those filtered errors by inner_tuple.
-    3) For each inner_tuple (in ascending order of sum(inner_tuple)):
-         a) Compute ssum = round(sum(inner_tuple), 8).
-         b) If ssum ∈ exclude_x_scale: scatter raw errs (gray) & skip fitting.
-         c) Else:
-            • If ssum < 2: pref = errs.
-            • Else: pref = [e for e in errs if e < 0.1].
-            • If len(pref) < 2: scatter raw errs & skip fitting.
-            • Else:
-                – q0 = 0th percentile of pref, q50 = 50th percentile of pref.
-                – filt = [e for e in pref if q0 ≤ e ≤ q50].
-                – If len(filt) < 2: scatter raw errs & skip fitting.
-                – Else:
-                    • Scatter raw errs (gray), collect (ssum, e) for each e in filt into fit_x, fit_y.
-    4) If len(fit_x) ≥ 2:
-         • Fit fit_y ≈ a·(fit_x)^b via curve_fit.
-         • Compute σ_a, σ_b from covariance.
-         • Plot best‐fit line “y = (a±σ_a)·x^(b±σ_b)” in red dashed.
-    5) If show_theory: overlay SQL (∝ x^(-0.5)) and Heisenberg (∝ x^(-1)) reference curves,
-       normalized to pass through the first fitted point.
-
-    Example usage
-    -------------
-    >>> # Suppose collect_recovery_errors_from_data(..., scaling_param="spreading", group_by="alpha")
-    >>> errs_by_spreading = {
-    ...     (0.1, 0.2): [ (0.05, "XY", 0.5), (0.08, "Heisenberg", 0.5), … ],
-    ...     (0.2, 0.3): [ … ],
-    ... }
-    >>> plot_errors_for_outer(
-    ...     errors_by_scaling=errs_by_spreading,
-    ...     scaling_param="spreading",
-    ...     group_by="alpha",
-    ...     outer_value=0.5,
-    ...     include_families=None,
-    ...     exclude_x_scale=None,
-    ...     show_theory=True
-    ... )
-    """
-    # Validate arguments
-    if scaling_param not in {"times", "spreading"}:
-        raise ValueError("scaling_param must be 'times' or 'spreading'")
-    if group_by not in {"alpha", "times", "spreading"}:
-        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
-    if group_by == scaling_param:
-        raise ValueError("group_by must differ from scaling_param")
-
-    # Determine axis labels from scaling_param and group_by
-    inner_label = "Total Experiment Time" if scaling_param == "times" else "Number of Spreadings"
-    outer_label = {
-        "alpha": "α",
-        "times": "Total Experiment Time",
-        "spreading": "Number of Spreadings"
-    }[group_by]
-
-    # (1) Filter triplets where group_key == outer_value
-    filtered = []
-    for inner_tuple, triplets in errors_by_scaling.items():
-        for (rel_err, family, group_key) in triplets:
-            if group_key == outer_value:
-                filtered.append((rel_err, family, inner_tuple))
-
-    if not filtered:
-        print(f"No data for {outer_label} = {outer_value}")
-        return
-
-    # (2) Prepare figure
-    plt.figure(figsize=(8, 7))
-    plt.xscale("log")
-    plt.yscale("log")
-
-    # (3) Group by inner_tuple
-    inner_groups = {}
-    for (rel_err, family, inner_tuple) in filtered:
-        if (include_families is not None) and (family not in include_families):
-            continue
-        inner_groups.setdefault(inner_tuple, []).append(rel_err)
-
-    fit_x = []
-    fit_y = []
-
-    # (4) Iterate over sorted inner_tuples
-    for inner_tuple, errs in sorted(
-        inner_groups.items(),
-        key=lambda item: round(sum(item[0]), 8)
-    ):
-        ssum = round(sum(inner_tuple), 8)
-
-        # (4a) Exclude from fitting if requested
-        if (exclude_x_scale is not None) and (ssum in exclude_x_scale):
-            plt.scatter(
-                [ssum] * len(errs),
-                errs,
-                color="gray",
-                edgecolor="black",
-                alpha=0.5,
-                s=80,
-                label=None
-            )
-            continue
-
-        # (4b) Custom prefilter
-        #if ssum < 2:
-        #    pref = errs.copy()
-        #else:
-        #    pref = [e for e in errs if e < 0.1]
-            
-        if scaling_param == 'times':
-            if ssum < 2:
-                pref = errs.copy()
-            else:
-                pref = [e for e in errs if e < 0.1]
-        else:
-            #pref = [e for e in errs if e < 2.0]
-            #pref = errs.copy()
-            if ssum < 50:
-                pref = errs.copy()
-            else:
-                pref = [e for e in errs if e < 0.1]
-
-
-        if len(pref) < 2:
-            plt.scatter(
-                [ssum] * len(errs),
-                errs,
-                color="gray",
-                edgecolor="black",
-                alpha=0.5,
-                s=80,
-                label=None
-            )
-            continue
-
-        # (4c) Percentile‐filter on pref
-        q0  = scoreatpercentile(pref, 0)
-        q50 = scoreatpercentile(pref, 50)
-        filt = [e for e in pref if (q0 <= e <= q50)]
-        if len(filt) < 2:
-            plt.scatter(
-                [ssum] * len(errs),
-                errs,
-                color="gray",
-                edgecolor="black",
-                alpha=0.5,
-                s=80,
-                label=None
-            )
-            continue
-
-        # (4d-1) Scatter all raw errs in gray
-        plt.scatter(
-            [ssum] * len(errs),
-            errs,
-            color="gray",
-            edgecolor="black",
-            alpha=0.5,
-            s=80,
-            label=None
-        )
-
-        # (4d-2) Append filtered errs for fitting
-        fit_x.extend([ssum] * len(filt))
-        fit_y.extend(filt)
-
-    # (5) Fit a power‐law if we have ≥2 points
-    def _power_law(x, a, b):
-        return a * np.power(x, b)
-
-    if len(fit_x) >= 2 and len(fit_y) >= 2:
-        fx = np.array(fit_x, dtype=float)
-        fy = np.array(fit_y, dtype=float)
-
-        # Sort by fx
-        idx_sort = np.argsort(fx)
-        fx = fx[idx_sort]
-        fy = fy[idx_sort]
-
-        try:
-            (a_fit, b_fit), pcov = curve_fit(_power_law, fx, fy, p0=(1.0, -0.5))
-            sigma_a, sigma_b = np.sqrt(np.diag(pcov))
-        except Exception:
-            a_fit = np.nan
-            b_fit = np.nan
-            sigma_a = np.nan
-            sigma_b = np.nan
-
-        # (6) Compute smooth fit curve
-        x_fit = np.logspace(np.log10(fx.min()), np.log10(fx.max()), 200)
-        y_fit = _power_law(x_fit, a_fit, b_fit)
-
-        # (7) Overlay SQL & Heisenberg if requested
-        if show_theory:
-            y_sql = y_fit[0] * (x_fit / x_fit[0]) ** (-0.5)
-            plt.plot(
-                x_fit, y_sql,
-                color="black", linestyle="-", linewidth=2, alpha=0.7,
-                label="SQL ∝ x⁻⁰․⁵"
-            )
-
-        # (8) Plot the best‐fit line and annotate uncertainties
-        def _round_sig(val, err):
-            if np.isnan(err) or err == 0:
-                return round(val, 2), round(err, 2)
-            sig = -int(np.floor(np.log10(err)))
-            return round(val, sig), round(err, sig)
-
-        a_r, a_err_r = _round_sig(a_fit, sigma_a)
-        b_r, b_err_r = _round_sig(b_fit, sigma_b)
-
-        plt.plot(
-            x_fit,
-            y_fit,
-            'r--',
-            linewidth=2,
-            label=f"Fit: y = ({a_r} ± {a_err_r})·x^({b_r} ± {b_err_r})",
-            zorder=3,
-            clip_on=False
-        )
-        
-        if show_theory:
-            y_heis = y_fit[0] * (x_fit / x_fit[0]) ** (-1.0)
-            plt.plot(
-                x_fit, y_heis,
-                color="blue", linestyle="-", linewidth=2, alpha=0.7,
-                label="Heisenberg ∝ x⁻¹"
-            )
-
-    # (9) Finalize labels and title
-    plt.xlabel(f"{inner_label} (log)", fontsize=16)
-    plt.ylabel("Error (log)", fontsize=16)
-    plt.title(f"Error vs {inner_label} ( {outer_label} = {outer_value} )", fontsize=18)
-
-    # Increase tick label sizes
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-
-    plt.grid(True, which="major", linestyle="-", linewidth=0.5, color="black", alpha=0.7)
-    plt.grid(True, which="minor", linestyle="--", linewidth=0.5, color="gray", alpha=0.7)
-    plt.legend(fontsize=15, loc="best")
-    plt.tight_layout()
-    plt.show()
-
-
-
-
-def plot_errors_for_outer(
-    errors_by_scaling: dict,
-    scaling_param: str,
-    group_by: str,
-    outer_value,
-    include_families: list = ["XYZ"],
-    exclude_x_scale: set = None,
-    show_theory: bool = True
-):
-    """
-    Plot error vs. sum(inner_tuple) for a given outer_value, with one curve per family.
-    """
-    # Validate arguments
-    if scaling_param not in {"times", "spreading"}:
-        raise ValueError("scaling_param must be 'times' or 'spreading'")
-    if group_by not in {"alpha", "times", "spreading"}:
-        raise ValueError("group_by must be 'alpha', 'times', or 'spreading'")
-    if group_by == scaling_param:
-        raise ValueError("group_by must differ from scaling_param")
-
-    # Labels
-    inner_label = "Total Experiment Time" if scaling_param == "times" else "Number of Spreadings"
-    outer_label = {"alpha": "α", "times": "Total Experiment Time", "spreading": "Number of Spreadings"}[group_by]
-
-    # (1) Filter triplets for this outer_value
-    filtered = []
-    for inner_tuple, triplets in errors_by_scaling.items():
-        for (rel_err, family, group_key) in triplets:
-            if group_key == outer_value:
-                filtered.append((inner_tuple, family, rel_err))
-    if not filtered:
-        print(f"No data for {outer_label} = {outer_value}")
-        return
-
-    # Group by inner_tuple
-    inner_groups = {}
-    for inner_tuple, family, rel_err in filtered:
-        if include_families and family not in include_families:
-            continue
-        inner_groups.setdefault(inner_tuple, []).append((family, rel_err))
-
-    # Prepare figure
-    plt.figure(figsize=(8, 7))
-    plt.xscale("log")
-    plt.yscale("log")
-
-    fit_x, fit_y = [], []
-    plotted_families = set()
-
-    # Iterate sorted by sum(inner_tuple)
-    for inner_tuple in sorted(inner_groups.keys(), key=lambda t: round(sum(t), 8)):
-        ssum = round(sum(inner_tuple), 8)
-        fam_errs_list = inner_groups[inner_tuple]
-        families_here = sorted({fam for fam, _ in fam_errs_list})
-        center_offset = (len(families_here) - 1) / 2
-
-        for i, family in enumerate(families_here):
-            fam_errs = [err for fam, err in fam_errs_list if fam == family]
-            # Prefilter
-            if scaling_param == 'times':
-                pref = fam_errs if ssum < 2 else [e for e in fam_errs if e < 0.1]
-            else:
-                pref = fam_errs if ssum < 50 else [e for e in fam_errs if e < 0.1]
-            if len(pref) < 2:
-                continue
-
-            # Percentile filter
-            q0, q50 = scoreatpercentile(pref, 0), scoreatpercentile(pref, 50)
-            filt = [e for e in pref if q0 <= e <= q50]
-            if len(filt) < 2:
-                continue
-
-            # Scatter
-            offset = (i - center_offset) * ssum * 0.02
-            x_vals = [ssum + offset] * len(fam_errs)
-            plt.scatter(
-                x_vals, fam_errs,
-                marker=FAMILY_MARKERS.get(family, 'o'),
-                color=FAMILY_COLORS.get(family, 'black'),
-                edgecolor='black',
-                alpha=0.7,
-                s=100,
-                label=family if family not in plotted_families else None
-            )
-            plotted_families.add(family)
-
-            # Collect for fit, unless excluded
-            if exclude_x_scale is None or ssum not in exclude_x_scale:
-                fit_x.extend([ssum] * len(filt))
-                fit_y.extend(filt)
-
-    # Fit power-law
-    def _power(x, a, b):
-        return a * np.power(x, b)
-
-    if len(fit_x) >= 2:
-        fx, fy = np.array(fit_x), np.array(fit_y)
-        idx = np.argsort(fx)
-        fx, fy = fx[idx], fy[idx]
-
-        try:
-            (a_fit, b_fit), pcov = curve_fit(_power, fx, fy, p0=(1.0, -0.5))
-            sigma_a, sigma_b = np.sqrt(np.diag(pcov))
-        except:
-            a_fit = b_fit = sigma_a = sigma_b = np.nan
-
-        # Smooth curve
-        x_fit = np.logspace(np.log10(fx.min()), np.log10(fx.max()), 200)
-        y_fit = _power(x_fit, a_fit, b_fit)
-
-        # Theory
-        if show_theory:
-            y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
-            plt.plot(x_fit, y_sql, '-', label="SQL ∝ x⁻⁰․⁵", linewidth=2, alpha=0.7)
-            y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
-            plt.plot(x_fit, y_heis, '-', label="Heisenberg ∝ x⁻¹", color='blue', linewidth=2, alpha=0.7)
-
-        # Fit line
-        def round_sig(val, err):
-            if np.isnan(err) or err == 0:
-                return round(val, 2), round(err, 2)
-            sig = -int(np.floor(np.log10(err)))
-            return round(val, sig), round(err, sig)
-        a_r, a_err_r = round_sig(a_fit, sigma_a)
-        b_r, b_err_r = round_sig(b_fit, sigma_b)
-
-        plt.plot(
-            x_fit, y_fit, 'r--',
-            label=f"Fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
-            linewidth=2, zorder=3, clip_on=False
-        )
-
-    # Finalize
-    plt.xlabel(f"{inner_label} (log)", fontsize=16)
-    plt.ylabel("Error (log)", fontsize=16)
-    plt.title(f"Error vs {inner_label} ({outer_label}={outer_value})", fontsize=18)
-    plt.xticks(fontsize=15); plt.yticks(fontsize=15)
-    plt.grid(True, which="both", linestyle='--', linewidth=0.5, alpha=0.7)
-    plt.legend(fontsize=14, loc='best')
-    plt.tight_layout()
-    plt.show()
 
 
 
@@ -1069,6 +752,7 @@ def plot_errors_for_outer(
     # Iterate sorted by sum(inner_tuple)
     for inner_tuple in sorted(inner_groups.keys(), key=lambda t: round(sum(t), 8)):
         ssum = round(sum(inner_tuple), 8)
+        print(ssum)
         fam_errs_list = inner_groups[inner_tuple]
         families_here = sorted({fam for fam, _ in fam_errs_list})
         center_offset = (len(families_here) - 1) / 2
@@ -1077,20 +761,20 @@ def plot_errors_for_outer(
             fam_errs = [err for fam, err in fam_errs_list if fam == family]
             # Prefilter
             if scaling_param == 'times':
-                pref = fam_errs if ssum < 2 else [e for e in fam_errs if e < 0.1]
+                pref = fam_errs if ssum < 2 else [e for e in fam_errs if e < 20.0]
             else:
-                pref = fam_errs if ssum < 50 else [e for e in fam_errs if e < 0.1]
-            if len(pref) < 2:
+                pref = fam_errs if ssum < 10 else [e for e in fam_errs if e < 20.0]
+            if len(pref) < 1:
                 continue
 
             # Percentile filter
-            q0, q50 = scoreatpercentile(pref, 0), scoreatpercentile(pref, 50)
+            q0, q50 = scoreatpercentile(pref, 0), scoreatpercentile(pref, 100)
             filt = [e for e in pref if q0 <= e <= q50]
-            if len(filt) < 2:
+            if len(filt) < 1:
                 continue
 
             # Scatter
-            offset = (i - center_offset) * ssum * 0.02
+            offset = (i - center_offset) * ssum * 0.01
             x_vals = [ssum + offset] * len(fam_errs)
             plt.scatter(
                 x_vals, fam_errs,
@@ -1116,7 +800,7 @@ def plot_errors_for_outer(
 
     # now do one power-law fit & plot per family
     for family, (fx_list, fy_list) in fit_data.items():
-        if len(fx_list) < 2:
+        if len(fx_list) < 1:
             continue
 
         fx = np.array(fx_list); fy = np.array(fy_list)
@@ -1134,7 +818,7 @@ def plot_errors_for_outer(
         y_fit = _power(x_fit, a_fit, b_fit)
 
         # optionally plot theory curves once (using first family’s fit as baseline)
-        if show_theory and family == list(fit_data.keys())[0]:
+        if show_theory and (family == list(fit_data.keys())[0] or family == list(fit_data.keys())[1]):
             y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
             plt.plot(x_fit, y_sql, '-', label="SQL ∝ x⁻⁰․⁵", linewidth=2, alpha=0.7)
             y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
@@ -1151,13 +835,15 @@ def plot_errors_for_outer(
 
         plt.plot(
             x_fit, y_fit, linestyle='--',
+            color=FAMILY_COLORS.get(family, 'black'),  # <-- ADD THIS LINE
             label=f"{family} fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
             linewidth=2, alpha=0.8
         )
 
+
     # Finalize
-    plt.xlabel(f"{inner_label} (log)", fontsize=16)
-    plt.ylabel("Error (log)", fontsize=16)
+    plt.xlabel(f"{inner_label} ", fontsize=16)
+    plt.ylabel("Error ", fontsize=16)
     plt.title(f"Error vs {inner_label} ({outer_label}={outer_value})", fontsize=18)
     plt.xticks(fontsize=15); plt.yticks(fontsize=15)
     plt.grid(True, which="both", linestyle='--', linewidth=0.5, alpha=0.7)
@@ -1255,115 +941,17 @@ def plot_betas_vs_alpha_alternative(alphas, betas, beta_errs, scaling_param: str
     plt.legend(fontsize=15, loc='best')
     plt.tight_layout()
     plt.show()
-    
-
-def plot_betas_vs_alpha_per_family(
-    results: dict,
-    scaling_param: str = "spreading",
-    show_regression: bool = True
-):
-    """
-    Plot β vs α for multiple families.
-
-    Parameters
-    ----------
-    results : dict
-        family → (alphas_array, betas_array, beta_errs_array)
-    scaling_param : str
-        "times" or "spreading" (affects title/labels)
-    show_regression : bool
-        if True, fit & plot m·β_theory + c for each family
-
-    Behavior
-    --------
-    • Draws the theoretical curve β_theory(α) = –(2α+1)/[2(α+1)] once, dashed.
-    • For each family in `results`:
-        – scatter α vs β with error‐bars, using 
-          FAMILY_MARKERS[family], FAMILY_COLORS[family]
-        – optionally, fit β_data ≈ m·β_theory_data + c and plot 
-          that fit in the family color, solid line.
-    """
-    inner_label = "Run-Time" if scaling_param == "times" else "State-Spreadings"
-    inner_label_sign = "T" if scaling_param == "times" else "R"
-
-    # 1) Compute overall theory curve
-    # collect all α across families to get min/max
-    all_a = np.hstack([res[0] for res in results.values()])
-    a_min, a_max = np.nanmin(all_a), np.nanmax(all_a)
-    alphas_fine = np.linspace(a_min, a_max, 300)
-    beta_theory_fine = -((2 * alphas_fine + 1) / (2 * (alphas_fine + 1)))
-
-    plt.figure(figsize=(8, 5))
-    # plot theory once
-    plt.plot(
-        alphas_fine, beta_theory_fine,
-        linestyle="--", linewidth=2,
-        label=r"Theoretical $\beta(\alpha) = -\frac{2\alpha+1}{2(\alpha+1)}$"
-    )
-
-    # 2) loop families
-    for fam, (alphas, betas, errs) in results.items():
-        # mask out NaNs
-        mask = ~np.isnan(betas)
-        a_data = alphas[mask]
-        b_data = betas[mask]
-        e_data = errs[mask]
-        if a_data.size == 0:
-            continue
-
-        # scatter + errorbars
-        plt.errorbar(
-            a_data, b_data, yerr=e_data,
-            fmt=FAMILY_MARKERS.get(fam, "o"),
-            markersize=8,
-            markeredgecolor="k",
-            markerfacecolor=FAMILY_COLORS.get(fam, "black"),
-            ecolor=FAMILY_COLORS.get(fam, "black"),
-            elinewidth=1.5,
-            capsize=4,
-            alpha=0.8,
-            label=f"{fam} & Fit"
-        )
-
-        if show_regression:
-            # compute beta_theory at data points
-            beta_theory_data = -((2 * a_data + 1) / (2 * (a_data + 1)))
-
-            # fit linear: b_data ≈ m·beta_theory_data + c
-            lr = LinearRegression().fit(
-                beta_theory_data.reshape(-1, 1),
-                b_data.reshape(-1, 1)
-            )
-            m, c = lr.coef_[0, 0], lr.intercept_[0]
-
-            # plot fit line over fine grid
-            fit_line = m * beta_theory_fine + c
-            plt.plot(
-                alphas_fine, fit_line,
-                linestyle="-", linewidth=2,
-                color=FAMILY_COLORS.get(fam, "black"),
-                alpha=0.7,
-                label=f"{fam} fit (m={m:.2f}, c={c:.2f})"
-            )
-
-    # formatting
-    plt.xlabel(r"$\alpha$", fontsize=15)
-    plt.ylabel(r"$\beta$", fontsize=15)
-    plt.title(f"{inner_label} Error-Scaling Exponent vs. $\\alpha$", fontsize=16)
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
-    plt.legend(fontsize=12, loc="best")
-    plt.tight_layout()
-    plt.show()
 
 
 def plot_betas_vs_alpha_per_family(
     results: dict,
     scaling_param: str = "spreading",
-    show_regression: bool = True
+    show_regression: bool = True,
+    exclude_alphas: list = []  # New argument
 ):
+
     inner_label = "Run-Time" if scaling_param == "times" else "State-Spreadings"
+    exclude_alphas = set(exclude_alphas or [])  # Ensure it's a set for fast lookup
 
     # 1) Theoretical curve
     all_a = np.hstack([res[0] for res in results.values()])
@@ -1371,29 +959,36 @@ def plot_betas_vs_alpha_per_family(
     beta_theory_fine = -((2 * fine + 1) / (2 * (fine + 1)))
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(
-        fine, beta_theory_fine,
-        '--', color='C0', linewidth=2,
-        label=r"Theoretical $\beta(\alpha)$"
-    )
+    if scaling_param != "spreading" or 1:
+        ax.plot(
+            fine, beta_theory_fine,
+            '--', color='C0', linewidth=2,
+            label=r"Theoretical $\beta(\alpha)$"
+        )
 
-    # We'll collect real ErrorbarContainer handles for the legend
-    legend_handles = [ax.lines[-1]]   # the theoretical line handle
-    legend_labels  = [r"Theoretical $\beta(\alpha)$"]
+        legend_handles = [ax.lines[-1]]
+        legend_labels  = [r"Theoretical $\beta(\alpha)$"]
+    else:
+        legend_handles = []
+        legend_labels  = []
 
-    # 2) Per‐family plotting
     for fam, (alphas, betas, errs) in results.items():
         mask = ~np.isnan(betas)
         a = alphas[mask]
         b = betas[mask]
         e = errs[mask]
+
+        # Apply exclusion
+        if exclude_alphas:
+            include_mask = ~np.isin(a, list(exclude_alphas))
+            a, b, e = a[include_mask], b[include_mask], e[include_mask]
+
         if a.size == 0:
             continue
 
         marker = FAMILY_MARKERS.get(fam, "o")
         color  = FAMILY_COLORS.get(fam, "black")
 
-        # Draw the real data
         eb = ax.errorbar(
             a, b, yerr=e,
             fmt=marker,
@@ -1407,7 +1002,6 @@ def plot_betas_vs_alpha_per_family(
             alpha=0.8
         )
 
-        # Regression line (unlabeled)
         if show_regression:
             beta_th = -((2 * a + 1) / (2 * (a + 1)))
             lr = LinearRegression().fit(
@@ -1419,23 +1013,14 @@ def plot_betas_vs_alpha_per_family(
                 '-', linewidth=2, color=color, alpha=0.7
             )
 
-        # Add the ErrorbarContainer to our legend handles
         legend_handles.append(eb)
         legend_labels.append(f'{fam} & Fit')
 
-    # Reference band
-    #theo = -0.75; half = 1/8
-    #ax.axhline(theo, color='green', linestyle=':', linewidth=3)
-    #ax.axhspan(theo-half, theo+half, color='green', alpha=0.2)
-
-    # Formatting
     ax.set_xlabel(r"$\alpha$", fontsize=15)
     ax.set_ylabel(r"$\beta$", fontsize=15)
     ax.set_title(f"{inner_label} Error‐Scaling Exponent vs. $\\alpha$", fontsize=16)
     ax.tick_params(labelsize=14)
     ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
-
-    # Build legend from our collected handles, which include real ErrorbarContainers
     ax.legend(legend_handles, legend_labels, fontsize=12, loc='best')
 
     plt.tight_layout()
