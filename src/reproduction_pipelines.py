@@ -141,7 +141,7 @@ def reproduce_data_SWEEP3(base_folder: str, families: str):
 
 def reproduce_data_SWEEP4(base_folder: str, families: str):
     """
-    Extended version of SWEEP 1 to run across multiple qubit sizes.
+    Sweeps over qubit sizes for sweep 4.
     Each run's data is stored in its own timestamped subfolder under base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
