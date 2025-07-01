@@ -68,7 +68,7 @@ def get_max_batch_size(nq, overhead_gb=6, round_to=50, safety=0.8):
             30_000 / (2 ** (nq / 5))
         )
     )
-    print(f'batchsize :{max(bs, 1)}')
+    #print(f'batchsize :{max(bs, 1)}')
 
     if round_to and round_to > 1:
         bs = max((bs // round_to) * round_to, round_to)
