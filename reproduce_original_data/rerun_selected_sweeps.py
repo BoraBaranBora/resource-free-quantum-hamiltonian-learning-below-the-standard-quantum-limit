@@ -243,7 +243,7 @@ def main():
     first_folder  = os.path.join(THIS_DIR, "first_parameter_sweep_data")
     second_folder = os.path.join(THIS_DIR, "second_parameter_sweep_data")
     third_folder  = os.path.join(THIS_DIR, "third_parameter_sweep_data")
-    fourth_folder  = os.path.join(THIS_DIR, "third_parameter_sweep_data")
+    fourth_folder  = os.path.join(THIS_DIR, "fourth_parameter_sweep_data")
 
 
     if run_sweep1:
