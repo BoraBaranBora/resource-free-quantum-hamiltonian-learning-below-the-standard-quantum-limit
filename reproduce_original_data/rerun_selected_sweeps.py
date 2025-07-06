@@ -247,19 +247,19 @@ def main():
 
 
     if run_sweep1:
-        print("→ Generating SWEEP 1 data (spreading sweep, measurements=50)…")
+        print("→ Generating SWEEP 1 data (spreading sweep)…")
         reproduce_data_SWEEP1(first_folder, chosen_families)
 
     if run_sweep2:
-        print("→ Generating SWEEP 2 data (α sweep, measurements=25)…")
+        print("→ Generating SWEEP 2 data (α sweep)…")
         reproduce_data_SWEEP2(second_folder, chosen_families)
 
     if run_sweep3:
-        print("→ Generating SWEEP 3 data (nested α+spreading, measurements=25)…")
+        print("→ Generating SWEEP 3 data (nested α+spreading)…")
         reproduce_data_SWEEP3(third_folder, chosen_families)
         
     if run_sweep4:
-        print("→ Generating SWEEP 4 data (qubit number sweep, measurements=25)…")
+        print("→ Generating SWEEP 4 data (qubit number sweep)…")
         reproduce_data_SWEEP4(fourth_folder, chosen_families)
 
 

@@ -21,7 +21,7 @@ DEMOPATH = os.path.dirname(os.path.abspath(__file__))
 DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
-MEASUREMENTS_SWEEP1 = 50   # for SWEEP 1
+MEASUREMENTS_SWEEP1 = 100   # for SWEEP 1
 MEASUREMENTS_SWEEP2 = 50  # for SWEEP 2 and SWEEP 3
 SHOTS               = 1
 STEPS               = 8
@@ -33,7 +33,7 @@ SPREADINGS_SWEEP1 = [100]#[1, 2, 4, 8, 16, 32, 64, 128]
 SPREADINGS_SWEEP3 = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]##[1, 10, 25, 50, 100, 250, 500]# #  
 ALPHAS     = [1.0]#[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
-QUBIT_SIZES = [7,8,9,10]
+QUBIT_SIZES = [2,3,4,5,6,7]
 SPREADING_SWEEP4 = 100
 
 def run(cmd):
