@@ -160,7 +160,7 @@ def main():
                    help="Comma‐separated Hamiltonian families, e.g. Heisenberg,XXZ,TFIM")
 
     # Fixed settings
-    p.add_argument("--num-qubits",   type=int, default=7,   help="Number of qubits")
+    p.add_argument("--num-qubits",   type=int, default=5,   help="Number of qubits")
     p.add_argument("--per-family",   type=int, default=10,  help="Hamiltonians per family")
     p.add_argument("--epochs",       type=int, default=1000, help="Training epochs")
     p.add_argument("--window",       type=int, default=15,  help="Early‐stop window")
@@ -197,7 +197,7 @@ def main():
         "coupling_type":       "anisotropic_normal",
         "h_field_type":        "random",
         "include_transverse":  True,
-        "hidden_layers":       [100, 200],
+        "hidden_layers":       [200, 400],
         "ACTIVATION":          nn.Tanh,
         "nn_seed":             99901,
         "device":              torch.device("cuda" if torch.cuda.is_available() else "cpu"),

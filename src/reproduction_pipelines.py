@@ -21,8 +21,8 @@ DEMOPATH = os.path.dirname(os.path.abspath(__file__))
 DEMO    = os.path.join(DEMOPATH, "learn_hamiltonian.py")
 
 # Shared fixed settings
-MEASUREMENTS_SWEEP1 = 50   # for SWEEP 1
-MEASUREMENTS_SWEEP2 = 50  # for SWEEP 2 and SWEEP 3
+MEASUREMENTS_SWEEP1 = 25   # for SWEEP 1
+MEASUREMENTS_SWEEP2 = 25  # for SWEEP 2 and SWEEP 3
 SHOTS               = 1
 STEPS               = 8
 
@@ -109,7 +109,7 @@ def reproduce_data_SWEEP2(base_folder: str, families: str):
         run([
             sys.executable, DEMO,
             "--alphas",       str(alpha),                 # sweep this α
-            "--spreadings",   "32",                       # fixed spreading = 50
+            "--spreadings",   "32",                       # fixed spreading = 32
             "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
