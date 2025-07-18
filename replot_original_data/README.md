@@ -12,12 +12,11 @@ replot_original_data/
 ├── cached_errors/                  
 │   ├── sweep1_errors.pkl
 │   ├── sweep2_errors.pkl
-│   └── sweep3_errors.pkl
 └── composite_replotting.py
 
 
 - **`composite_replotting.py`**  
-  Orchestrates all plotting pipelines (Figures 1–3). It expects to load precomputed error–data pickles from `cached_errors/
+  Orchestrates all plotting pipelines (Figures 1(a,b)–2(a,b)). It expects to load precomputed error–data pickles from `cached_errors/
 
 - **`cached_errors/` (auto‐generated)**  
   Contains the three pickles listed above. Once these exist, `composite_replotting.py` can load them directly (avoiding hours of re‐processing all embeddings).
@@ -39,8 +38,6 @@ replot_original_data/
   2. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
    - **Figure 1:** Error vs ∑time (colored/fitted by number of state initial state spreadings) and β vs number of state initial state spreadings.  
    - **Figure 2:** Error vs ∑time for one α and Error vs spreadings for one α.  
-   - **Figure 3a:** β vs α, alternative β vs α (theory + linear‐fit), β vs α, alternative β vs α (theory + linear‐fit).  
-   - **Figure 3a:** Derivative comparison: dβ/dα vs α (time‐scaling vs spreadings‐scaling).  
 
   3. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).
 
