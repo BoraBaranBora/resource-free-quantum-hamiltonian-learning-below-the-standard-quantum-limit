@@ -12,12 +12,10 @@ reproduce_original_data/
 ├── rerun_selected_sweeps.py
 ├── first_parameter_sweep_data/     ← created by SWEEP 1 when rerun_selected_sweeps.py
 ├── second_parameter_sweep_data/    ← created by SWEEP 2 when rerun_selected_sweeps.py
-├── third_parameter_sweep_data/     ← created by SWEEP 3 when rerun_selected_sweeps.py
 ├── precompute_errors.py
 ├── cached_errors/                  ← created by running precompute_errors.py (optional)
 │   ├── sweep1_errors.pkl
 │   ├── sweep2_errors.pkl
-│   └── sweep3_errors.pkl
 └── composite_replotting.py
 
 - **`first_parameter_sweep_data/`**, **`second_parameter_sweep_data/`**, **`third_parameter_sweep_data/`**  
@@ -37,8 +35,6 @@ reproduce_original_data/
     (time‐scaling grouped by number of initial state spreadings, from `first_parameter_sweep_data/`)
   - `cached_errors/sweep2_errors.pkl`  
     (time‐scaling grouped by α, from `second_parameter_sweep_data/`)
-  - `cached_errors/sweep3_errors.pkl`  
-    (spreadings‐scaling grouped by α, from `third_parameter_sweep_data/`)
 
 - **`cached_errors/` (auto‐generated)**  
   Contains the three pickles listed above. Once these exist, `composite_replotting.py` can load them directly (avoiding hours of re‐processing all embeddings).
@@ -55,13 +51,12 @@ reproduce_original_data/
 - **Toggle Which Sweeps to Run**  
   At the top of `rerun_selected_sweeps.py`, set the booleans:
   ```python
-  run_sweep1 = True    # SWEEP 1: α=1.0 (fixed), spreadings ∈ {1,10,25,50,100,250,500}, measurements=50, shots=1, steps=1..8
-  run_sweep2 = False   # SWEEP 2: α ∈ {0.3,0.4,…,1.0}, spreadings=50 (fixed), measurements=25, shots=1, steps=1..8
-  run_sweep3 = False   # SWEEP 3: α ∈ {0.3,0.4,…,1.0}, spreadings ∈ {1,10,25,50,100,250,500}, measurements=25, shots=1, steps=8 (fixed)
+  run_sweep1 = True    # SWEEP 1: α=1.0 (fixed), spreadings ∈ {1,2,4,8,16,32,64,128}, measurements=50, shots=1, steps=1..8
+  run_sweep2 = False   # SWEEP 2: α ∈ {0.1,0.2,0.3,0.4,…,1.0}, spreadings=50 (fixed), measurements=25, shots=1, steps=1..8
 
 ### SWEEP 1
 
-Creates `first_parameter_sweep_data/run_SWEEP1_spreadings_<p>/` for each `p ∈ {1,10,25,50,100,250,500}`.
+Creates `first_parameter_sweep_data/run_SWEEP1_spreadings_<p>/` for each `p ∈ {1,2,4,8,16,32,64,128}`.
 
 Inside each `run_SWEEP1_spreadings_<p>/`, you’ll find combo directories named  
 `alpha_1.000_spreadings_<p>_measurements_50_shots_1_steps_<N>/` for `N=1..8`.
@@ -72,21 +67,13 @@ Each combo folder contains `config.json`, `hamiltonians.json`, and the trained e
 
 ### SWEEP 2
 
-Creates `second_parameter_sweep_data/run_SWEEP2_alpha_<α>/` for each `α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}`.
+Creates `second_parameter_sweep_data/run_SWEEP2_alpha_<α>/` for each `α ∈ {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}`.
 
 Inside each `run_SWEEP2_alpha_<α>/`, you’ll find  
-`alpha_<α>_spreadings_50_measurements_25_shots_1_steps_<N>/` for `N=1..8`.
+`alpha_<α>_spreadings_32_measurements_25_shots_1_steps_<N>/` for `N=1..8`.
 
 ---
 
-### SWEEP 3
-
-Creates `third_parameter_sweep_data/run_SWEEP3_alpha_<α>/` for each `α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}`.
-
-Inside each `run_SWEEP3_alpha_<α>/`, you’ll find combo folders  
-`alpha_<α>_spreadings_<p>_measurements_25_shots_1_steps_8/` for each `p ∈ {1,10,25,50,100,250,500}`.
-
----
 
 ### What Happens Under the Hood
 
@@ -94,7 +81,6 @@ For each enabled sweep, the script calls one of:
 
 reproduce_data_SWEEP1(first_folder)
 reproduce_data_SWEEP2(second_folder)
-reproduce_data_SWEEP3(third_folder)
 
 
 where each function invokes `learn_hamiltonian.py` (from `src/`) with the appropriate `--alphas`, `--spreadings`, `--measurements`, `--shots`, `--steps`, and `--output-dir` arguments.
@@ -122,11 +108,9 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
      ```  
      and merges all results into a single dictionary.  
   2. Repeats for `second_parameter_sweep_data/` with `scaling_param="times"`, `group_by="alpha"`.  
-  3. Repeats for `third_parameter_sweep_data/` with `scaling_param="spreadings"`, `group_by="alpha"`.  
-  4. Writes out three pickles into `cached_errors/`:  
+  3. Writes out three pickles into `cached_errors/`:  
      - `sweep1_errors.pkl`  
      - `sweep2_errors.pkl`  
-     - `sweep3_errors.pkl`
 
 
 
@@ -143,7 +127,5 @@ where each function invokes `learn_hamiltonian.py` (from `src/`) with the approp
   2. The script will load cached sweep data (produced by `precompute_errors.py`) and produce the following outputs:  
    - **Figure 1:** Error vs ∑time (colored/fitted by number of state initial state spreadings) and β vs number of state initial state spreadings.  
    - **Figure 2:** Error vs ∑time for one α and Error vs spreadings for one α.  
-   - **Figure 3a:** β vs α, alternative β vs α (theory + linear‐fit), β vs α, alternative β vs α (theory + linear‐fit).  
-   - **Figure 3a:** Derivative comparison: dβ/dα vs α (time‐scaling vs spreadings‐scaling).  
  
   3. Plots will appear on‐screen (or be saved to disk, depending on your plotting configuration).
