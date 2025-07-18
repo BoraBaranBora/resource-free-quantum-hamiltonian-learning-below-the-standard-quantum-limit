@@ -16,7 +16,7 @@ This repository provides the code and data for the Hamiltonian learning strategy
    You can re‐plot Figures 1–2 (and the derivative comparison) without re‐training from the datasets in the same directory by using the `composite_replotting.py` script:  
    - `first_parameter_sweep_data/` → Figure 1 data (α = 1.0; varying number of state initial state spreadings; measurements = 25; steps = 1…8)  
    - `second_parameter_sweep_data/` → Figure 2 data (spreadings = 32; varying α; measurements = 25; steps = 1…8)  
-   - `third_parameter_sweep_data/` → Figure 3 data (steps = 8; varying α and spreadings; measurements = 25)  
+
    - `composite_replotting.py` → orchestrates all re‐plotting pipelines for Figures 1–3 and the derivative comparison.
 
 2. **Data‐(re-)generation pipelines** (`reproduce_original_data/`)  
