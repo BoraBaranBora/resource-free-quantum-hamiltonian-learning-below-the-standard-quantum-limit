@@ -20,7 +20,6 @@ directories and your `composite_replotting.py`. For example:
     <ProjectRoot>/replot_original_data/
     ├─ first_parameter_sweep_data/
     ├─ second_parameter_sweep_data/
-    ├─ third_parameter_sweep_data/
     ├─ composite_replotting.py
     └─ precompute_errors.py      ← save this here
 
@@ -34,7 +33,6 @@ via `collect_recovery_errors_from_data(...)`, and then write:
     <ProjectRoot>/replot_original_data/cached_errors/
     ├─ sweep1_errors.pkl
     ├─ sweep2_errors.pkl
-    └─ sweep3_errors.pkl
 
 Afterward, your plotting pipelines (inside `plotting_pipelines.py`) simply
 load these pickles instead of re-reading all the raw embeddings.
@@ -51,8 +49,7 @@ Screenshot:
   → Pickled 42 keys to: …/cached_errors/sweep1_errors.pkl
   → Precomputing errors for: …/second_parameter_sweep_data (scaling_param=times, group_by=alpha)
   → Pickled 37 keys to: …/cached_errors/sweep2_errors.pkl
-  → Precomputing errors for: …/third_parameter_sweep_data (scaling_param=spreading, group_by=alpha)
-  → Pickled 27 keys to: …/cached_errors/sweep3_errors.pkl
+
 
 After this, running `composite_replotting.py` will be much faster:
 plots will load from cached_errors/*.pkl instead of re-computing.
@@ -62,8 +59,6 @@ plots will load from cached_errors/*.pkl instead of re-computing.
 import sys
 import os
 import pickle
-
-import traceback
 
 # Ensure we can import collect_recovery_errors_from_data from src/
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +115,6 @@ Parameters:
             )
         except Exception as e:
             print(f"  [ERROR] Failed in '{run_folder_path}': {e}")
-            traceback.print_exc()
             continue
 
         # Merge per-run results into one dict
@@ -162,15 +156,6 @@ if __name__ == "__main__":
         scaling_param="times",
         group_by="alpha",
         out_fname="sweep2_errors.pkl"
-    )
-
-    # 3) Sweep 3: spreading‐scaling grouped by alpha
-    base3 = os.path.join(script_dir, "third_parameter_sweep_data")
-    precompute_for_base(
-        base_path=base3,
-        scaling_param="spreading",
-        group_by="alpha",
-        out_fname="sweep3_errors.pkl"
     )
 
     print("\nAll cached pickles (if data existed) have been written.")

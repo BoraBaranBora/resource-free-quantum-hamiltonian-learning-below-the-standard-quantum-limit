@@ -19,8 +19,7 @@ with a particular set of command‐line arguments.  As a result, for each
 In other words, each call to learn_hamiltonian.py (with `--output-dir run_…`)
 automatically builds the expected experimental parameter combination subfolders (alpha_…_spreading_…_…) 
 and writes out everything needed for later plotting.  Once all sweeps complete,
-you can run composite_plotting.py to produce Figures 1, 2, 3, and the derivative
-comparison.
+you can run composite_plotting.py to produce Figures 1, 2.
 
 ────────────────────────────────────────────────────────────────────────────────
 Toggle which sweeps to run:
@@ -29,7 +28,7 @@ Toggle which sweeps to run:
 run_sweep1:  “SWEEP 1” generates a data‐set in which
              • α = 1.0 (fixed)
              • spreading ∈ {1, 10, 25, 50, 100, 250, 500}  
-             • measurements = 50  
+             • measurements = 25  
              • shots = 1  
              • steps = 1..8 (internally swept)  
 
@@ -41,8 +40,8 @@ run_sweep1:  “SWEEP 1” generates a data‐set in which
              experiment time” as we increase the spread‐state ensemble.
 
 run_sweep2:  “SWEEP 2” generates a data‐set in which
-             • α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}
-             • spreading = 50 (fixed)
+             • α ∈ {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}
+             • spreading = 32 (fixed)
              • measurements = 25  
              • shots = 1  
              • steps = 1..8 (internally swept)  
@@ -51,17 +50,6 @@ run_sweep2:  “SWEEP 2” generates a data‐set in which
              Inside, you get combo‐folders “alpha_<α>_spreading_50_…/”.  This
              sweep explores “error vs total experiment time” as α varies.
 
-run_sweep3:  “SWEEP 3” generates a data‐set in which
-             • α ∈ {0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}
-             • spreading ∈ {1,10,25,50,100,250,500}  (internally swept)  
-             • measurements = 25  
-             • shots = 1  
-             • steps = 8  (fixed)  
-
-             For each α, learn_hamiltonian.py produces run_SWEEP3_alpha_<α>/.  
-             Inside that, it creates combo‐folders “alpha_<α>_spreading_<p>_<…>/”
-             for every spreading value.  This sweep explores “error vs ensemble
-             size” at fixed total experiment time.
 
 ────────────────────────────────────────────────────────────────────────────────
 What happens in the background:
@@ -101,21 +89,6 @@ What happens in the background:
     alpha_<α>_spreading_50_…/ for each time stamp.  This supplies data for “time‐scaling
     grouped by α” in Figure 2.
 
-3.  `reproduce_data_SWEEP3(base_folder)` calls learn_hamiltonian.py for each α:
-
-      --alphas <α>
-      --spreadings 1,10,25,50,100,250,500
-      --measurements 25
-      --shots 1
-      --steps 8
-      --output-dir <base_folder>/run_SWEEP3_alpha_<α>/
-
-    Now, within run_SWEEP3_alpha_<α>/, learn_hamiltonian.py internally loops
-    over spreading = 1, 10, 25, …, 500 (because of the comma‐separated list).
-    It fixes step count = 8.  You end up with combos
-    alpha_<α>_spreading_<pert>_measurements_25_shots_1_steps_8/ for each spreading.
-    This supplies data for “spreading‐scaling grouped by α” in Figure 3.
-
 ────────────────────────────────────────────────────────────────────────────────
 Expected results:
 ────────────────────────────────────────────────────────────────────────────────
@@ -151,26 +124,14 @@ Once all three flags are set and `python run_selected.py` completes, you should 
       …
       run_SWEEP2_alpha_1.0/
 
-    third_parameter_sweep_data/
-      run_SWEEP3_alpha_0.3/
-        alpha_0.300_spreading_1_…_steps_8/
-        alpha_0.300_spreading_10_…_steps_8/
-        …
-        alpha_0.300_spreading_500_…_steps_8/
-      run_SWEEP3_alpha_0.4/
-      …
-      run_SWEEP3_alpha_1.0/
-
 Once that directory tree is present, you can run:
 
     python composite_plotting.py
 
 and it will produce:
 
-  • Figure 1 (“Error vs ∑time, colored/fitted by spreading” and “β vs spreading”)  
-  • Figure 2 (“β vs α,” “alternative β vs α,” and “Error vs ∑time” for one chosen α)  
-  • Figure 3 (“β vs α,” “alternative β vs α,” and “Error vs spreading” for one chosen α)  
-  • Derivative‐comparison plot dβ/dα vs α  
+  • Figure 1 (a,b)  
+  • Figure 2 (a,b)  
 
 All outputs (plots, saved images, etc.) appear in whatever location
 composite_plotting.py is configured to show them (usually displayed to screen
@@ -218,10 +179,9 @@ from reproduction_pipelines import (
 #   to be re‐built from scratch by calling learn_hamiltonian.py.  If False,
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
-run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=50
-run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=50), measurements=25
-run_sweep3 = False     # SWEEP 3: nested α+spreading, measurements=25
-run_sweep4 = False
+run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=25
+run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=32), measurements=25
+
 
 # ───────────────────────────────────────────────────────────────────────────────
 #   Specify which families to sweep (comma‐separated list).  For example:
@@ -237,13 +197,11 @@ def main():
     reproduction function(s), passing along the `chosen_families` string.
     Each function writes into a “base_folder” (creating it if necessary),
     then within that folder creates subfolders named run_SWEEP1_…,
-    run_SWEEP2_…, or run_SWEEP3_… respectively.
+    run_SWEEP2_…, respectively.
     """
     # Define the three top‐level destinations where each sweep’s “run_…” folders live:
     first_folder  = os.path.join(THIS_DIR, "first_parameter_sweep_data")
     second_folder = os.path.join(THIS_DIR, "second_parameter_sweep_data")
-    third_folder  = os.path.join(THIS_DIR, "third_parameter_sweep_data")
-    fourth_folder  = os.path.join(THIS_DIR, "fourth_parameter_sweep_data")
 
 
     if run_sweep1:
@@ -254,21 +212,11 @@ def main():
         print("→ Generating SWEEP 2 data (α sweep)…")
         reproduce_data_SWEEP2(second_folder, chosen_families)
 
-    if run_sweep3:
-        print("→ Generating SWEEP 3 data (nested α+spreading)…")
-        reproduce_data_SWEEP3(third_folder, chosen_families)
-        
-    if run_sweep4:
-        print("→ Generating SWEEP 4 data (qubit number sweep)…")
-        reproduce_data_SWEEP4(fourth_folder, chosen_families)
-
-
 
     print("\nrun_selected.py finished. Check these directories for generated data:")
     print("  ", first_folder)
     print("  ", second_folder)
-    print("  ", third_folder)
-    print("  ", fourth_folder)
+
 
 
 
