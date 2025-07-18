@@ -31,7 +31,7 @@ This repository provides the code and data for the Hamiltonian learning strategy
      `alpha_<…>_spreadings_<…>_measurements_<…>_shots_<…>_steps_<…>/`  
      with `config.json`, `hamiltonians.json`, `embedding_<codename>.pth`, etc.
 
-   You can also plot Figures 1–3 (and the derivative comparison) from the reproduced data using the `composite_replotting.py` script, which orchestrates all plotting pipelines for Figures 1–3 from the datasets:
+   You can also plot Figures 1–2 (and the derivative comparison) from the reproduced data using the `composite_replotting.py` script, which orchestrates all plotting pipelines for Figures 1–2 from the datasets:
    - `first_parameter_sweep_data/` → Figure 1 data (α = 1.0; varying number of state initial state spreadings; measurements = 25; steps = 1…8)  
    - `second_parameter_sweep_data/` → Figure 2 data (spreadings = 32; varying α; measurements = 25; steps = 1…8)  
 
