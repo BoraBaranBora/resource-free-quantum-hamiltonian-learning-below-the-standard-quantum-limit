@@ -31,10 +31,7 @@ STEPS_SWEEP1        = 15
 # Sweep lists
 SPREADINGS_SWEEP1 = [1, 2, 4, 8, 16, 32, 64, 128]
 SPREADINGS_SWEEP3 = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]##[1, 10, 25, 50, 100, 250, 500]# #  
-ALPHAS     = [1.1,1.2]#[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
-
-QUBIT_SIZES = [2,3,4,5,6,7]
-SPREADING_SWEEP4 = 50
+ALPHAS     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
 def run(cmd):
     """Helper to print and execute a subprocess command using the same Python interpreter."""
@@ -114,48 +111,5 @@ def reproduce_data_SWEEP2(base_folder: str, families: str):
             "--shots",        str(SHOTS),
             "--steps",        step_list,                  # sweep steps = 1…8
             "--families",     families,                   # now passed in
-            "--output-dir",   base_folder
-        ])
-
-
-def reproduce_data_SWEEP3(base_folder: str, families: str):
-    """
-    Sweep over parameter combinations for SWEEP 3 (measurements=25).
-    Generates outputs directly in base_folder.
-    """
-    os.makedirs(base_folder, exist_ok=True)
-    spreading_list = ",".join(str(p) for p in SPREADINGS_SWEEP3)
-
-    for alpha in tqdm(ALPHAS, desc="SWEEP 3 Data (measurements=25)"):
-        run([
-            sys.executable, DEMO,
-            "--alphas",       str(alpha),                 # sweep this α
-            "--spreadings",   spreading_list,             # sweep all SPREADINGS internally
-            "--measurements", str(MEASUREMENTS_SWEEP2),   # 25
-            "--shots",        str(SHOTS),
-            "--steps",        str(STEPS),                  # exactly 8 steps
-            "--families",     families,                   # now passed in
-            "--output-dir",   base_folder
-        ])
-
-
-def reproduce_data_SWEEP4(base_folder: str, families: str):
-    """
-    Sweeps over qubit sizes for sweep 4.
-    Each run's data is stored in its own timestamped subfolder under base_folder.
-    """
-    os.makedirs(base_folder, exist_ok=True)
-    step_list = ",".join(str(i) for i in range(1, STEPS_SWEEP1 + 1))
-
-    for nq in tqdm(QUBIT_SIZES, desc="Qubit Size Sweep"):
-        run([
-            sys.executable, DEMO,
-            "--alphas",       "1.0",                      # fixed α
-            "--spreadings",   str(SPREADING_SWEEP4),             # fixed spreading value
-            "--measurements", str(MEASUREMENTS_SWEEP1),   # fixed measurements
-            "--shots",        str(SHOTS),
-            "--steps",        step_list,                  # steps = 1…15
-            "--families",     families,
-            "--num-qubits",   str(nq),                    # sweep this
             "--output-dir",   base_folder
         ])
