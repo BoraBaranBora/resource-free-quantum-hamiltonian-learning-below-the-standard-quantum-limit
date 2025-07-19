@@ -177,7 +177,7 @@ from reproduction_pipelines import (
 #   to be re‐built from scratch by calling learn_hamiltonian.py.  If False,
 #   we assume data already exists in the corresponding folder.
 # ───────────────────────────────────────────────────────────────────────────────
-run_sweep1 = False    # SWEEP 1: spreading‐sweep (α=1.0), measurements=25
+run_sweep1 = True    # SWEEP 1: spreading‐sweep (α=1.0), measurements=25
 run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=32), measurements=25
 
 
