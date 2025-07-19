@@ -31,7 +31,7 @@ STEPS_SWEEP1        = 15
 # Sweep lists
 SPREADINGS_SWEEP1 = [1, 2, 4, 8, 16, 32, 64, 128]
 SPREADINGS_SWEEP3 = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]##[1, 10, 25, 50, 100, 250, 500]# #  
-ALPHAS     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
+ALPHAS     = [1.0]#[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
 
 def run(cmd):
     """Helper to print and execute a subprocess command using the same Python interpreter."""

@@ -170,8 +170,6 @@ sys.path.insert(0, SRC_DIR)
 from reproduction_pipelines import (
     reproduce_data_SWEEP1,
     reproduce_data_SWEEP2,
-    reproduce_data_SWEEP3,
-    reproduce_data_SWEEP4
 )
 
 # ───────────────────────────────────────────────────────────────────────────────
@@ -187,7 +185,7 @@ run_sweep2 = True     # SWEEP 2: α‐sweep (spreading=32), measurements=25
 #   Specify which families to sweep (comma‐separated list).  For example:
 #     "Heisenberg", "XYZ2", "Heisenberg3,XYZ2", etc.
 # ───────────────────────────────────────────────────────────────────────────────
-chosen_families = "XYZ,XYZ2,XYZ3" #"XYZ,XYZ2,XYZ3"
+chosen_families = "XXYGL" #"XYZ,XYZ2,XYZ3,XXYGL"
 # ───────────────────────────────────────────────────────────────────────────────
 
 
