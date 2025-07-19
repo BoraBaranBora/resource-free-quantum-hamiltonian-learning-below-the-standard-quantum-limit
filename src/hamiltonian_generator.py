@@ -20,8 +20,8 @@ def generate_hamiltonian_parameters(
     **kwargs
 ) -> dict:
     """
-    Generate Hamiltonian parameters for “base” families like 'Heisenberg' or 'XYZ'
-    plus a numeric suffix indicating higher‐order (e.g. 'XYZ2', 'Heisenberg3', ...).
+    Generate Hamiltonian parameters for “base” families like 'XYZ' or 'XXY'
+    plus a numeric suffix indicating higher‐order (e.g. 'XYZ2', ...).
 
     Returns a dict with:
       - 'base_family': either 'Heisenberg' or 'XYZ'
@@ -32,7 +32,7 @@ def generate_hamiltonian_parameters(
       - 'K': np.array shape (num_qubits-2,3) or None  ← second‐order couplings (i,i+2)
       - 'L': np.array shape (num_qubits-2,3) or None  ← third‐order couplings (i,i+1,i+2)
     """
-    # ――― 1) Parse “family” string for a base name + numeric suffix ―――
+    #  1) Parse “family” string for a base name + numeric suffix 
     m = re.fullmatch(r"([A-Za-z]+?)(\d+)$", family)
     if m:
         base_name = m.group(1)
@@ -41,11 +41,26 @@ def generate_hamiltonian_parameters(
         base_name = family
         include_higher_order = 0
 
-    # Only “Heisenberg” or “XYZ” are supported as bases
-    if base_name not in {"Heisenberg", "XYZ"}:
-        raise ValueError(f"Unknown base family '{base_name}'; only 'Heisenberg' or 'XYZ' are allowed.")
+    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL"}:
+        raise ValueError(f"Unknown base family '{base_name}'; only 'XYZ', 'XYZ2', 'XYZ3', 'XXYGL' are allowed.")
+    
+    # Special case: XXYGL has fixed form with Δ ∈ [-0.5, 0.5] and no fields
+    if base_name == "XXYGL":
+        delta = kwargs.get("delta", 0.3)  # allow overriding delta
+        J = np.tile([1.0, 1.0, delta], (num_qubits, 1))  # Jx = Jy = 1, Jz = delta
+        h_x = np.zeros(num_qubits)
+        return {
+            "base_family": base_name,
+            "include_higher_order": 0,
+            "J": J,
+            "h_x": h_x,
+            "h_y": None,
+            "h_z": None,
+            "K": None,
+            "L": None
+        }
 
-    # ――― 2) Generate first‐order (NN) couplings J[i,(x,y,z)] ―――
+    #  2) Generate first‐order (NN) couplings J[i,(x,y,z)] 
     if coupling_type == "random":
         J = np.random.uniform(-1, 1, size=(num_qubits, 3))
     elif coupling_type == "uniform_random":
@@ -62,7 +77,7 @@ def generate_hamiltonian_parameters(
     else:
         raise ValueError(f"Unknown coupling_type = {coupling_type}")
 
-    # ――― 3) Generate on‐site X‐field h_x[i] ALWAYS (so we can always add at least σ⁽ˣ⁾ terms) ―――
+    #  3) Generate on‐site X‐field h_x[i] ALWAYS (so we can always add at least σ⁽ˣ⁾ terms) 
     if h_field_type == "random":
         h_x = np.random.uniform(-1, 1, size=(num_qubits,))
     elif h_field_type == "uniform_random":
@@ -75,7 +90,7 @@ def generate_hamiltonian_parameters(
     else:
         raise ValueError(f"Unknown h_field_type = {h_field_type}")
 
-    # ――― 4) If include_higher_order ≥ 2, also generate h_y, h_z for full on‐site field ―――
+    #  4) If include_higher_order ≥ 2, also generate h_y, h_z for full on‐site field 
     h_y = None
     h_z = None
     if include_higher_order >= 2:
@@ -97,7 +112,7 @@ def generate_hamiltonian_parameters(
             # (Should never reach here because we already handled unknown types above)
             pass
 
-    # ――― 5) Generate K (second‐order, i↔i+2) if include_higher_order ≥ 2 ―――
+    #  5) Generate K (second‐order, i↔i+2) if include_higher_order ≥ 2 
     K = None
     if include_higher_order >= 2:
         if coupling_type in {"random", "uniform_random"}:
@@ -114,7 +129,7 @@ def generate_hamiltonian_parameters(
             # fallback to uniform
             K = np.random.uniform(-1, 1, size=(num_qubits - 2, 3))
 
-    # ――― 6) Placeholder for L (third‐order, i,i+1,i+2) if include_higher_order ≥ 3 ―――
+    #  6) Placeholder for L (third‐order, i,i+1,i+2) if include_higher_order ≥ 3 
     L = None
     if include_higher_order >= 3:
         # Example: one XXX, YYY, ZZZ coefficient per triple
@@ -140,16 +155,21 @@ def generate_hamiltonian(
     **params
 ) -> torch.Tensor:
     """
-    Build the Heisenberg/XYZ Hamiltonian up to the order encoded in `family`.
-    If family="XYZ2", then include NN (i,i+1) + NNN (i,i+2) + full on‐site {X,Y,Z} fields.
-    If family="XYZ3", also include a 3‐body (i,i+1,i+2) triple‐product, etc.
+    Build the Heisenberg/XYZ/XXYGL Hamiltonian up to the order encoded in `family`.
+
+    - If family = "XYZ", then include only nearest-neighbor (i,i+1) interactions.
+    - If family = "XYZ2", also include next-nearest-neighbor (i,i+2) interactions
+      and full on-site {X, Y, Z} fields.
+    - If family = "XYZ3", also include 3-body (i,i+1,i+2) triple-product terms.
+    - If family = "XXYGL", build a special XXZ-like gapless Hamiltonian with fixed
+      Jx = Jy = 1, Jz = Δ (in [-0.5, 0.5]) and no on-site fields.
 
     The parameter dict returned by `generate_hamiltonian_parameters` must be passed here.
 
     Returns:
       H ∈ ℂ^(2^num_qubits × 2^num_qubits)
     """
-    # ――― 1) Re‐parse family to discover base name + numeric suffix ―――
+    #  1) Re‐parse family to discover base name + numeric suffix 
     m = re.fullmatch(r"([A-Za-z]+?)(\d+)$", family)
     if m:
         base_name = m.group(1)
@@ -158,7 +178,7 @@ def generate_hamiltonian(
         base_name = family
         include_higher_order = 0
 
-    if base_name not in {"Heisenberg", "XYZ"}:
+    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL"}:
         raise ValueError(f"Unknown base family '{base_name}' in generate_hamiltonian.")
 
     dim = 2 ** num_qubits
@@ -170,7 +190,7 @@ def generate_hamiltonian(
     sigma_z = torch.tensor([[1, 0], [0, -1]], dtype=torch.complex64, device=device)
     identity = torch.eye(2, dtype=torch.complex64, device=device)
 
-    # ――― 2) Extract J, h_x, h_y, h_z, K, L from params ―――
+    #  2) Extract J, h_x, h_y, h_z, K, L from params 
     J   = np.array(params["J"])                        # shape (num_qubits, 3)
     h_x = np.array(params.get("h_x"))                   # shape (num_qubits,)
     h_y = np.array(params.get("h_y")) if params.get("h_y") is not None else None
@@ -179,7 +199,7 @@ def generate_hamiltonian(
     L   = np.array(params.get("L")) if params.get("L") is not None else None
     
 
-    # ――― 3) Nearest‐neighbor Heisenberg/XYZ (i,i+1) block ―――
+    #  3) Nearest‐neighbor Heisenberg/XYZ (i,i+1) block 
     for i in range(num_qubits - 1):
         tx = [identity] * num_qubits
         tx[i] = sigma_x
@@ -197,14 +217,14 @@ def generate_hamiltonian(
         H -= J[i, 1] * apply_kron(ty)
         H -= J[i, 2] * apply_kron(tz)
 
-    # ――― 4) On‐site X‐field ∑ₙ h_x[n]·σₙˣ ALWAYS (if h_x is not None) ―――
+    #  4) On‐site X‐field ∑ₙ h_x[n]·σₙˣ ALWAYS (if h_x is not None) 
     if h_x is not None:
         for i in range(num_qubits):
             term = [identity] * num_qubits
             term[i] = sigma_x
             H += h_x[i] * apply_kron(term)
 
-    # ――― 5) If include_higher_order ≥ 2, also add on‐site Y & Z fields ―――
+    #  5) If include_higher_order ≥ 2, also add on‐site Y & Z fields 
     if include_higher_order >= 2:
         if h_y is not None:
             for i in range(num_qubits):
@@ -217,7 +237,7 @@ def generate_hamiltonian(
                 term[i] = sigma_z
                 H += h_z[i] * apply_kron(term)
 
-    # ――― 6) Next‐nearest‐neighbor (i,i+2) if include_higher_order ≥ 2 ―――
+    #  6) Next‐nearest‐neighbor (i,i+2) if include_higher_order ≥ 2 
     if (include_higher_order >= 2) and (K is not None):
         for i in range(num_qubits - 2):
             txx = [identity] * num_qubits
@@ -236,7 +256,7 @@ def generate_hamiltonian(
             H -= K[i, 1] * apply_kron(tyy)
             H -= K[i, 2] * apply_kron(tzz)
 
-    # ――― 7) Third‐order “XYZ3” triple‐product if include_higher_order ≥ 3 ―――
+    #  7) Third‐order “XYZ3” triple‐product if include_higher_order ≥ 3 
     if (include_higher_order >= 3) and (L is not None):
         for i in range(num_qubits - 2):
             txxx = [identity] * num_qubits
