@@ -46,9 +46,10 @@ def generate_hamiltonian_parameters(
     
     # Special case: XXYGL has fixed form with Δ ∈ [-0.5, 0.5] and no fields
     if base_name == "XXYGL":
-        delta = kwargs.get("delta", 0.3)  # allow overriding delta
-        J = np.tile([1.0, 1.0, delta], (num_qubits, 1))  # Jx = Jy = 1, Jz = delta
-        h_x = np.zeros(num_qubits)
+        # Random Δ in [−0.5, 0.5]
+        delta = np.random.uniform(-0.5, 0.5)
+        J = np.tile([1.0, 1.0, delta], (num_qubits, 1))  # Jx = Jy = 1, Jz = Δ
+        h_x = np.zeros(num_qubits)  # no fields
         return {
             "base_family": base_name,
             "include_higher_order": 0,
@@ -59,6 +60,7 @@ def generate_hamiltonian_parameters(
             "K": None,
             "L": None
         }
+
 
     #  2) Generate first‐order (NN) couplings J[i,(x,y,z)] 
     if coupling_type == "random":
