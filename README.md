@@ -10,31 +10,29 @@ This repository provides the code and data for the Hamiltonian learning strategy
 
 1. **Original (“publication”) data** (`replot_original_data/`)  
    Scripts under `replot_original_data/` that contain the _original_ data folders and produce all plots exactly as in the publication:  
-   - **Figure 1(a,b):** Error vs ∑time (colored/fitted by number of state initial state spreadings) and β vs number of state initial state spreadings.  
-   - **Figure 2(a,b):** Error vs ∑time for one α and Error vs spreadings for one α.  
+   - **Figure 1:** Error vs ∑time for α = 1.0 (four Hamiltonian families).  
+   - **Figure 2:** Error-scaling exponent β vs scheduling exponent α (with spreadings = 32).  
+   - **Figure 3(a, b):** (a) Error vs ∑time for α = 1.0 with increasing number of state spreadings; (b) Fitted β vs number of spreadings.
 
-   You can re‐plot Figures 1–2 (and the derivative comparison) without re‐training from the datasets in the same directory by using the `composite_replotting.py` script:  
-   - `first_parameter_sweep_data/` → Figure 1 data (α = 1.0; varying number of state initial state spreadings; measurements = 25; steps = 1…8)  
-   - `second_parameter_sweep_data/` → Figure 2 data (spreadings = 32; varying α; measurements = 25; steps = 1…8)  
+   You can re‐plot Figures 1–3 (and the derivative comparison) without re‐training from the datasets in the same directory by using the `composite_replotting.py` script:  
+   - `first_parameter_sweep_data/` → Figures 1 and 2 data (spreadings = 32; varying α; measurements = 25; steps = 1…8)  
+   - `second_parameter_sweep_data/` → Figure 3 data (α = 1.0; varying number of state spreadings; measurements = 25; steps = 1…8)  
 
    - `composite_replotting.py` → orchestrates all re‐plotting pipelines for Figures 1–3 and the derivative comparison.
 
 2. **Data‐(re-)generation pipelines** (`reproduce_original_data/`)  
-   Scripts to re‐generate the embedding files (`.pth` weights + loss logs) for all three “figures” (Figure 1, 2) via `learn_hamiltonian.py`.  
-   - The main controller is `rerun_selected_sweeps.py`, where you toggle three flags to choose which sweeps (SWEEP 1, 2) to run.  
+   Scripts to re‐generate the embedding files (`.pth` weights + loss logs) for all figure data via `learn_hamiltonian.py`.  
+   - The main controller is `rerun_selected_sweeps.py`, where you toggle flags to choose which sweeps (SWEEP 1 or 2) to run.  
    - Each sweep produces a set of folders under:
      ```
-     first_parameter_sweep_data/     ← SWEEP 1 (α = 1.0, varying number of state initial state spreadings; measurements = 25; steps = 1…8)
+     first_parameter_sweep_data/     ← SWEEP 1 (α = 1.0, varying number of state spreadings; measurements = 25; steps = 1…8)
      second_parameter_sweep_data/    ← SWEEP 2 (spreadings = 32; varying α; measurements = 25; steps = 1…8)
      ```
-   - Each `run_…` subfolder then contains “combo” directories of the form  
+   - Each `run_…` subfolder then contains directories of the form  
      `alpha_<…>_spreadings_<…>_measurements_<…>_shots_<…>_steps_<…>/`  
      with `config.json`, `hamiltonians.json`, `embedding_<codename>.pth`, etc.
 
-   You can also plot Figures 1–2 (and the derivative comparison) from the reproduced data using the `composite_replotting.py` script, which orchestrates all plotting pipelines for Figures 1–2 from the datasets:
-   - `first_parameter_sweep_data/` → Figure 1 data (α = 1.0; varying number of state initial state spreadings; measurements = 25; steps = 1…8)  
-   - `second_parameter_sweep_data/` → Figure 2 data (spreadings = 32; varying α; measurements = 25; steps = 1…8)  
-
+   You can also re-plot Figures 1–2 (and the derivative comparison) from the reproduced data using the `composite_replotting.py` script.
 
 3. **Source code** (`src/`)  
    - `learn_hamiltonian.py` – main training script  

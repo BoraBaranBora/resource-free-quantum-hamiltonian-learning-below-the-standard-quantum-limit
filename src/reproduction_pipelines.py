@@ -73,15 +73,15 @@ def run(cmd):
         raise
     
 
-def reproduce_data_SWEEP1(base_folder: str, families: str):
+def reproduce_data_SWEEP2(base_folder: str, families: str):
     """
-    Sweep over parameter combinations for SWEEP 1 .
+    Sweep over parameter combinations for SWEEP 2 .
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS_SWEEP1 + 1))
 
-    for spread in tqdm(SPREADINGS_SWEEP1, desc=f"SWEEP 1 Data (measurements={MEASUREMENTS_SWEEP1})"):
+    for spread in tqdm(SPREADINGS_SWEEP1, desc=f"SWEEP 2 Data (measurements={MEASUREMENTS_SWEEP1})"):
         run([
             sys.executable, DEMO,
             "--alphas",       "1.0",                      # fixed α
@@ -94,15 +94,15 @@ def reproduce_data_SWEEP1(base_folder: str, families: str):
         ])
 
 
-def reproduce_data_SWEEP2(base_folder: str, families: str):
+def reproduce_data_SWEEP1(base_folder: str, families: str):
     """
-    Sweep over parameter combinations for SWEEP 2 .
+    Sweep over parameter combinations for SWEEP 1 .
     Generates outputs directly in base_folder.
     """
     os.makedirs(base_folder, exist_ok=True)
     step_list = ",".join(str(i) for i in range(1, STEPS + 1))
 
-    for alpha in tqdm(ALPHAS, desc=f"SWEEP 2 Data (measurements={MEASUREMENTS_SWEEP2})"):
+    for alpha in tqdm(ALPHAS, desc=f"SWEEP 1 Data (measurements={MEASUREMENTS_SWEEP2})"):
         run([
             sys.executable, DEMO,
             "--alphas",       str(alpha),                 # sweep this α

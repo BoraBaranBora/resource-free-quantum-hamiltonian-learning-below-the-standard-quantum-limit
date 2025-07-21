@@ -26,15 +26,15 @@ from plotting_utils import (
 
 
 
-def run_sweep1_pipeline(base1: str, cache_dir: str):
+def run_sweep2_pipeline(base1: str, cache_dir: str):
     """
-    Sweep 1 (time‐scaling by spreading).  Expects
+    Sweep 2 (time‐scaling by spreading).  Expects
       base1
-    to point to first_parameter_sweep_data/.  It will look for
+    to point to second_parameter_sweep_data/.  It will look for
       {cache_dir}/sweep1_errors.pkl
     first, and only if missing will it recompute.
     """
-    print("\n=== Running Sweep 1 Pipeline ===")
+    print("\n=== Running Sweep 2 Pipeline ===")
     os.makedirs(cache_dir, exist_ok=True)
     cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
 
@@ -102,18 +102,18 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
             err_val = float(err)
             print(f"  {k_val:.3f} → {b_val:.3f} ± {err_val:.3f}")
 
-    print("=== Finished Sweep 1 Pipeline ===\n")
+    print("=== Finished Sweep 2 Pipeline ===\n")
 
 
-def run_sweep2_pipeline(base_time: str, cache_dir: str):
+def run_sweep1_pipeline(base_time: str, cache_dir: str):
     """
-    Sweep 2 (time‐scaling by alpha).  Expects base_time
+    Sweep 1 (time‐scaling by alpha).  Expects base_time
     to point to second_parameter_sweep_data/.  It will look for
-      {cache_dir}/sweep2_errors.pkl first.
+      {cache_dir}/sweep1_errors.pkl first.
     """
     print("\n=== Running Sweep 2 Pipeline ===")
     os.makedirs(cache_dir, exist_ok=True)
-    cache_path = os.path.join(cache_dir, "sweep2_errors.pkl")
+    cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
 
     # (1) Load or collect raw errors
     if os.path.exists(cache_path):
@@ -176,24 +176,24 @@ def run_sweep2_pipeline(base_time: str, cache_dir: str):
             print(f"  α={k_val:.3f} → {b_val:.3f} ± {err_val:.3f}")
 
 
-    print("\n=== Finished Sweep 2 Pipeline ===\n")
+    print("\n=== Finished Sweep 1 (Figure 1) Pipeline ===\n")
     return results
 
 
-def run_sweep2_outer(base_time: str, cache_dir: str):
+def run_sweep1_outer(base_time: str, cache_dir: str):
     """
-    Sweep 2 Outer: pick one α (largest) and plot Error vs ∑(time).
+    Sweep 1 (Figure 1): pick one α (largest) and plot Error vs ∑(time).
     Expects cached errors under {cache_dir}/sweep2_errors.pkl.
     """
-    print("\n=== Running Sweep 2 Outer (Error vs ∑(time) for one α) ===")
-    cache_path = os.path.join(cache_dir, "sweep2_errors.pkl")
+    print("\n=== Running Sweep 1 (Error vs ∑(time) for one α) ===")
+    cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
 
     if os.path.exists(cache_path):
         print(f"  → Loading cached errors from {cache_path}")
         with open(cache_path, "rb") as f:
             combined_errors = pickle.load(f)
     else:
-        print("  → No cached file; cannot run Sweep 2 Outer.")
+        print("  → No cached file; cannot run Sweep 1 Outer.")
         return
 
     unique_alphas = sorted({
@@ -201,7 +201,6 @@ def run_sweep2_outer(base_time: str, cache_dir: str):
         for triplets in combined_errors.values()
         for triplet in triplets
     })
-    print("  Available α (Sweep 2 Outer):", unique_alphas)
     alpha_value = unique_alphas[-1]
 
     #plot_errors_for_outer(
@@ -224,5 +223,5 @@ def run_sweep2_outer(base_time: str, cache_dir: str):
         show_theory=True
     )
 
-    print("=== Finished Sweep 2 Outer ===\n")
+    print("=== Finished Sweep 1 (Figure 2) ===\n")
 
