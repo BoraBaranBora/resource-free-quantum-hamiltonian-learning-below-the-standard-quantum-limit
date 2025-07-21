@@ -31,12 +31,12 @@ def run_sweep2_pipeline(base1: str, cache_dir: str):
     Sweep 2 (time‐scaling by spreading).  Expects
       base1
     to point to second_parameter_sweep_data/.  It will look for
-      {cache_dir}/sweep1_errors.pkl
+      {cache_dir}/sweep2_errors.pkl
     first, and only if missing will it recompute.
     """
     print("\n=== Running Sweep 2 Pipeline ===")
     os.makedirs(cache_dir, exist_ok=True)
-    cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
+    cache_path = os.path.join(cache_dir, "sweep2_errors.pkl")
 
     if os.path.exists(cache_path):
         print(f"  → Loading cached errors from {cache_path}")
@@ -62,7 +62,7 @@ def run_sweep2_pipeline(base1: str, cache_dir: str):
                 combined_errors.setdefault(time_tuple, []).extend(triplets)
 
         if not combined_errors:
-            print("  No data found for Sweep 1. Skipping.\n")
+            print("  No data found for Sweep 2. Skipping.\n")
             return
 
         with open(cache_path, "wb") as f:
@@ -108,7 +108,7 @@ def run_sweep2_pipeline(base1: str, cache_dir: str):
 def run_sweep1_pipeline(base_time: str, cache_dir: str):
     """
     Sweep 1 (time‐scaling by alpha).  Expects base_time
-    to point to second_parameter_sweep_data/.  It will look for
+    to point to first_parameter_sweep_data/.  It will look for
       {cache_dir}/sweep1_errors.pkl first.
     """
     print("\n=== Running Sweep 2 Pipeline ===")
@@ -140,7 +140,7 @@ def run_sweep1_pipeline(base_time: str, cache_dir: str):
                 combined_errors.setdefault(time_tuple, []).extend(triplets)
 
         if not combined_errors:
-            print("  No Sweep 2 data found; skipping.\n")
+            print("  No Sweep 1 data found; skipping.\n")
             return None
 
         with open(cache_path, "wb") as f:

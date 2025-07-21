@@ -46,9 +46,9 @@ Screenshot:
 ---------------
 (base) PS C:\…\replot_original_data> python precompute_errors.py
   → Precomputing errors for: …/first_parameter_sweep_data (scaling_param=times, group_by=spreading)
-  → Pickled 42 keys to: …/cached_errors/sweep1_errors.pkl
+  → Pickled ... keys to: …/cached_errors/sweep1_errors.pkl
   → Precomputing errors for: …/second_parameter_sweep_data (scaling_param=times, group_by=alpha)
-  → Pickled 37 keys to: …/cached_errors/sweep2_errors.pkl
+  → Pickled ... keys to: …/cached_errors/sweep2_errors.pkl
 
 
 After this, running `composite_replotting.py` will be much faster:
@@ -140,21 +140,21 @@ if __name__ == "__main__":
     # Locate the three data folders relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # 1) Sweep 1: time‐scaling grouped by spreadingation
-    base1 = os.path.join(script_dir, "first_parameter_sweep_data")
-    precompute_for_base(
-        base_path=base1,
-        scaling_param="times",
-        group_by="spreading",
-        out_fname="sweep1_errors.pkl"
-    )
-
     # 2) Sweep 2: time‐scaling grouped by alpha
-    base2 = os.path.join(script_dir, "second_parameter_sweep_data")
+    base2 = os.path.join(script_dir, "first_parameter_sweep_data")
     precompute_for_base(
         base_path=base2,
         scaling_param="times",
         group_by="alpha",
+        out_fname="sweep1_errors.pkl"
+    )
+    
+        # 1) Sweep 1: time‐scaling grouped by spreadingation
+    base1 = os.path.join(script_dir, "second_parameter_sweep_data")
+    precompute_for_base(
+        base_path=base1,
+        scaling_param="times",
+        group_by="spreading",
         out_fname="sweep2_errors.pkl"
     )
 
