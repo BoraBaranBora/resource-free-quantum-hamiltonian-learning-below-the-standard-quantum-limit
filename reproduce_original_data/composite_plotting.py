@@ -27,8 +27,6 @@ from plotting_pipelines import (
 
 )
 
-from plotting_utils import plot_combined_betas_vs_alpha_two_panels
-
 if __name__ == "__main__":
     # point to your three “sweep_data” folders
     sweep1_path = os.path.join(THIS_DIR, "first_parameter_sweep_data")
@@ -51,5 +49,5 @@ if __name__ == "__main__":
     # Illustrative Example Figure 2
     # 2b) (Single Run from Sweep 2)
     run_sweep2_outer(sweep2_path, cache_dir)
-
+    
     print("All plotting complete.")

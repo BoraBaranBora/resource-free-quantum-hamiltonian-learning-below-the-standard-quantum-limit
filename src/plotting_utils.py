@@ -53,16 +53,21 @@ def plot_errors_by_spreadings(
     if include_families is not None:
         filtered = {}
         for t, recs in errors_by_time.items():
-            kept = [ (e,f,k) for (e,f,k) in recs if f in include_families ]
+            kept = [
+                (e, f if f != "XXYGL" else "XXZ", k)
+                for (e, f, k) in recs
+                if (f if f != "XXYGL" else "XXZ") in include_families
+            ]
             if kept:
                 filtered[t] = kept
         errors_by_time = filtered
         if not errors_by_time:
             print("No data for families:", include_families)
             return
+
     # === end new ===
 
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(8, 7))
     plt.xscale('log')
     plt.yscale('log')
 
@@ -160,12 +165,12 @@ def plot_errors_by_spreadings(
     if label_prefix == "α":
         plt.title("Error vs Total Experiment Time (grouped by α)", fontsize=20)
     else:
-        plt.title(f"Effect of Number of Spreadings on Learning Rate; ({include_families[0]})", fontsize=20)
+        plt.title(f"Effect of Spreadings on Error Scaling; ({include_families[0]})", fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.grid(True, which='major', linestyle='-', linewidth=0.5, color='black', alpha=0.7)
     plt.grid(True, which='minor', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=15)
     plt.tight_layout()
     plt.show()
 
@@ -184,10 +189,11 @@ def plot_beta_trends_per_family(
     label_prefix : str
         If "α", axis/title will label α; otherwise it's “State Spreadings”.
     """
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(8, 7))
 
     # (0) For each family, scatter+trend
-    for fam, (keys, betas, beta_errs) in results.items():
+    for orig_fam, (keys, betas, beta_errs) in results.items():
+        fam = "XXZ" if orig_fam == "XXYGL" else orig_fam
         # flatten & sort
         k = np.asarray(keys, float).ravel()
         b = np.asarray(betas, float).ravel()
@@ -261,7 +267,7 @@ def plot_beta_trends_per_family(
     plt.tight_layout()
     plt.show()
 
-    
+
 def plot_errors_for_outer(
     errors_by_scaling: dict,
     scaling_param: str,
@@ -293,6 +299,7 @@ def plot_errors_for_outer(
         for (rel_err, family, group_key) in triplets:
             if group_key == outer_value:
                 filtered.append((inner_tuple, family, rel_err))
+
     if not filtered:
         print(f"No data for {outer_label} = {outer_value}")
         return
@@ -318,8 +325,7 @@ def plot_errors_for_outer(
         families_here = sorted({fam for fam, _ in fam_errs_list})
         center_offset = (len(families_here) - 1) / 2
 
-        # Use the first element of inner_tuple for plotting x-values (adjust as needed)
-        x_base = sum(inner_tuple)#inner_tuple[-1] if isinstance(inner_tuple, (tuple, list)) else inner_tuple
+        x_base = sum(inner_tuple)
 
         for i, family in enumerate(families_here):
             fam_errs = [err for fam, err in fam_errs_list if fam == family]
@@ -339,23 +345,25 @@ def plot_errors_for_outer(
             offset = (i - center_offset) * x_base * 0.01
             x_vals = [x_base + offset] * len(fam_errs)
 
+            display_family = "XXZ" if family == "XXYGL" else family
+
             plt.scatter(
                 x_vals, fam_errs,
-                marker=FAMILY_MARKERS.get(family, 'o'),
-                color=FAMILY_COLORS.get(family, 'black'),
+                marker=FAMILY_MARKERS.get(display_family, 'o'),
+                color=FAMILY_COLORS.get(display_family, 'black'),
                 edgecolor='black',
-                alpha=0.7,
+                alpha=0.65,
                 s=100,
-                label=family if family not in plotted_families else None
+                label=display_family if display_family not in plotted_families else None
             )
 
-            if family not in plotted_families:
-                plotted_families.append(family)
+            if display_family not in plotted_families:
+                plotted_families.append(display_family)
 
             if exclude_x_scale is None or x_base not in exclude_x_scale:
-                if family not in fit_data:
-                    fit_data[family] = ([], [])
-                fx_list, fy_list = fit_data[family]
+                if display_family not in fit_data:
+                    fit_data[display_family] = ([], [])
+                fx_list, fy_list = fit_data[display_family]
                 fx_list.extend([x_base] * len(filt))
                 fy_list.extend(filt)
 
@@ -365,12 +373,12 @@ def plot_errors_for_outer(
 
     theory_plotted = False  # Only plot theory lines once
 
-    for family in plotted_families:
-        if family not in fit_data or len(fit_data[family][0]) < 1:
+    for display_family in plotted_families:
+        if display_family not in fit_data or len(fit_data[display_family][0]) < 1:
             continue
 
-        fx = np.array(fit_data[family][0])
-        fy = np.array(fit_data[family][1])
+        fx = np.array(fit_data[display_family][0])
+        fy = np.array(fit_data[display_family][1])
         idx = np.argsort(fx)
         fx, fy = fx[idx], fy[idx]
 
@@ -383,8 +391,7 @@ def plot_errors_for_outer(
         x_fit = np.logspace(np.log10(fx.min()), np.log10(fx.max()), 200)
         y_fit = _power(x_fit, a_fit, b_fit)
 
-        # plot SQL/Heisenberg curves only once
-        if show_theory and not theory_plotted and family in plotted_families[:2]:
+        if show_theory and not theory_plotted:
             y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
             plt.plot(x_fit, y_sql, '-', label="SQL ∝ x⁰․⁵", linewidth=2, alpha=0.7)
             y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
@@ -402,20 +409,45 @@ def plot_errors_for_outer(
 
         plt.plot(
             x_fit, y_fit, linestyle='--',
-            color=FAMILY_COLORS.get(family, 'black'),
-            label=f"{family} fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
+            color=FAMILY_COLORS.get(display_family, 'black'),
+            label=f"{display_family} fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
             linewidth=2, alpha=0.8
         )
 
     plt.xlabel(f"{inner_label} ", fontsize=20)
     plt.ylabel("Error ", fontsize=20)
-    plt.title(f"Error vs {inner_label} ({outer_label}={outer_value})", fontsize=20)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)
+    title = f"Error vs {inner_label} ({outer_label}={outer_value})"
+    if include_families and len(include_families) == 1:
+        title += f" - {display_family}"
+    plt.title(title, fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
     plt.grid(True, which="both", linestyle='--', linewidth=0.5, alpha=0.7)
-    plt.legend(fontsize=13, loc='best')
+    plt.legend(fontsize=15, loc='best')
     plt.tight_layout()
     plt.show()
 
+
+def plot_each_family_separately(
+    errors_by_scaling: dict,
+    scaling_param: str,
+    group_by: str,
+    outer_value,
+    families: list,
+    exclude_x_scale: set = None,
+    show_theory: bool = True
+):
+    for family in families:
+        print(f"\nPlotting for family: {family}")
+        plot_errors_for_outer(
+            errors_by_scaling=errors_by_scaling,
+            scaling_param=scaling_param,
+            group_by=group_by,
+            outer_value=outer_value,
+            include_families=[family],
+            exclude_x_scale=exclude_x_scale,
+            show_theory=show_theory
+        )
 
 
 
@@ -444,8 +476,6 @@ def plot_betas_vs_alpha_per_family(
 
     legend_handles = []
     legend_labels = []
-
-
 
     for fam, (alphas, betas, errs) in results.items():
         mask = ~np.isnan(betas)
@@ -521,3 +551,105 @@ def plot_betas_vs_alpha_per_family(
     plt.show()
     return fig, ax
 
+
+
+
+def plot_betas_vs_alpha_per_family(
+    results: dict,
+    scaling_param: str = "times",
+    gamma0_theory: float = 2.0,
+    finite_mt_offset: float = -0.09,
+    exclude_alphas: list = []
+):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    def beta_theory(alpha, gamma0):
+        return 0.5 * (alpha * gamma0 + 1) / (alpha + 1)
+
+    inner_label = "Total Exp. Time" if scaling_param == "times" else "State-Spreadings"
+    exclude_alphas = set(exclude_alphas or [])
+
+    all_a = np.hstack([res[0] for res in results.values()])
+    fine = np.linspace(np.nanmin(all_a), np.nanmax(all_a), 300)
+    theory_vals = beta_theory(fine, gamma0=gamma0_theory)
+    theory_shifted = theory_vals + finite_mt_offset
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    data_handles = []
+    data_labels = []
+
+    for orig_fam, (alphas, betas, errs) in results.items():
+        fam = "XXZ" if orig_fam == "XXYGL" else orig_fam
+
+        mask = ~np.isnan(betas)
+        a = alphas[mask]
+        b = betas[mask]
+        e = errs[mask]
+
+        if exclude_alphas:
+            include_mask = ~np.isin(a, list(exclude_alphas))
+            a, b, e = a[include_mask], b[include_mask], e[include_mask]
+
+        if a.size == 0:
+            continue
+
+        color = FAMILY_COLORS.get(fam, "black")
+        marker = FAMILY_MARKERS.get(fam, "o")
+
+        eb = ax.errorbar(
+            a, b, yerr=e,
+            fmt=marker,
+            linestyle='None',
+            markersize=8,
+            markeredgecolor='k',
+            markerfacecolor=color,
+            ecolor=color,
+            elinewidth=1.5,
+            capsize=4,
+            alpha=0.8,
+            label=fam
+        )
+
+        data_handles.append(eb)
+        data_labels.append(fam)
+
+    # Plot theoretical curves
+    theory_main, = ax.plot(
+        fine, theory_vals,
+        '-', linewidth=2.5, color='black', alpha=0.8,
+        label=fr"Prediction"
+    )
+    theory_shifted_line, = ax.plot(
+        fine, theory_shifted,
+        '--', linewidth=2.5, color='gray', alpha=0.8,
+        label=fr"Prediction, shifted"
+    )
+
+    # Legend for data families
+    data_legend = ax.legend(
+        handles=data_handles,
+        labels=data_labels,
+        fontsize=13,
+        loc='upper left',
+        title="Data families"
+    )
+    ax.add_artist(data_legend)
+
+    # Separate legend for theory lines
+    ax.legend(
+        handles=[theory_main, theory_shifted_line],
+        loc='lower right',
+        fontsize=15,
+        title='Theoretical curves'
+    )
+
+    ax.set_xlabel(r"$\alpha$", fontsize=20)
+    ax.set_ylabel(r"$\beta_{\mathrm{T}_{\mathrm{tot}}}$", fontsize=20)
+    ax.set_title(f"{inner_label} Error‐Scaling Exponent vs. $\\alpha$", fontsize=20)
+    ax.tick_params(labelsize=18)
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+
+    plt.tight_layout()
+    plt.show()
+    return fig, ax

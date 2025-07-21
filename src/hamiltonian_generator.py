@@ -41,11 +41,11 @@ def generate_hamiltonian_parameters(
         base_name = family
         include_higher_order = 0
 
-    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL"}:
-        raise ValueError(f"Unknown base family '{base_name}'; only 'XYZ', 'XYZ2', 'XYZ3', 'XXYGL' are allowed.")
+    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL", "XXZ"}:
+        raise ValueError(f"Unknown base family '{base_name}'; only 'XYZ', 'XYZ2', 'XYZ3', 'XXYGL'or 'XXZ' are allowed.")
     
     # Special case: XXYGL has fixed form with Δ ∈ [-0.5, 0.5] and no fields
-    if base_name == "XXYGL":
+    if base_name == "XXYGL" or base_name == "XXZ":
         # Random Δ in [−0.5, 0.5]
         delta = np.random.uniform(-0.5, 0.5)
         J = np.tile([1.0, 1.0, delta], (num_qubits, 1))  # Jx = Jy = 1, Jz = Δ
@@ -180,7 +180,7 @@ def generate_hamiltonian(
         base_name = family
         include_higher_order = 0
 
-    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL"}:
+    if base_name not in {"XYZ", "XYZ2", "XYZ3", "XXYGL", "XXZ"}:
         raise ValueError(f"Unknown base family '{base_name}' in generate_hamiltonian.")
 
     dim = 2 ** num_qubits

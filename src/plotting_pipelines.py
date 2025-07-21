@@ -21,6 +21,7 @@ from plotting_utils import (
     plot_errors_for_outer,
     plot_beta_trends_per_family,
     plot_betas_vs_alpha_per_family,
+    plot_each_family_separately
 )
 
 
@@ -80,7 +81,7 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
     results = compute_betas_from_errors(
         combined_errors,
         scaling_param="times",
-        include_families=["XYZ","XYZ2","XYZ3"],
+        include_families=["XYZ","XYZ2","XYZ3","XXYGL"],
         exclude_x_scale= None,
         exclude_above_one =True
     )
@@ -91,7 +92,8 @@ def run_sweep1_pipeline(base1: str, cache_dir: str):
 
     # 3) Print β and its 1σ uncertainty for each family & key
     print("\nSpreadings & β ± δβ by family:")
-    for fam, (keys, betas, errs) in results.items():
+    for orig_fam, (keys, betas, errs) in results.items():
+        fam = "XXZ" if orig_fam == "XXYGL" else orig_fam
         print(f"\nFamily: {fam}")
         for k, b, err in zip(keys, betas, errs):
             # ensure we have plain floats
@@ -149,7 +151,7 @@ def run_sweep2_pipeline(base_time: str, cache_dir: str):
     results = compute_betas_from_errors(
         combined_errors,
         scaling_param="times",
-        include_families=["XYZ","XYZ2","XYZ3"],
+        include_families=["XYZ","XYZ2","XYZ3","XXYGL"],
         exclude_x_scale=[],
         exclude_above_one=True
     )
@@ -163,7 +165,8 @@ def run_sweep2_pipeline(base_time: str, cache_dir: str):
     
     # (4) Print β ± σ for each family, with your chosen label_prefix
     print("\nα & β(α) ± δβ by family:")
-    for fam, (keys, betas, errs) in results.items():
+    for orig_fam, (keys, betas, errs) in results.items():
+        fam = "XXZ" if orig_fam == "XXYGL" else orig_fam
         print(f"\nFamily: {fam}")
         for k, b, err in zip(keys, betas, errs):
             k_val   = float(k)
@@ -201,14 +204,25 @@ def run_sweep2_outer(base_time: str, cache_dir: str):
     print("  Available α (Sweep 2 Outer):", unique_alphas)
     alpha_value = unique_alphas[-1]
 
-    plot_errors_for_outer(
+    #plot_errors_for_outer(
+    #    errors_by_scaling=combined_errors,
+    #    scaling_param="times",
+    #    group_by="alpha",
+    #    outer_value=alpha_value,
+    #    include_families=None,
+    #    exclude_x_scale=[],
+    #    show_theory=True
+    #)
+    
+    plot_each_family_separately(
         errors_by_scaling=combined_errors,
-        scaling_param="times",
-        group_by="alpha",
+        scaling_param='times',
+        group_by='alpha',
         outer_value=alpha_value,
-        include_families=None,
-        exclude_x_scale=[],
+        families=["XYZ","XYZ2","XYZ3","XXYGL"],
+        exclude_x_scale={},  
         show_theory=True
     )
+
     print("=== Finished Sweep 2 Outer ===\n")
 

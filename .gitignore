@@ -19,5 +19,9 @@ replot_original_data/second_parameter_sweep_data
 reproduce_original_data/first_parameter_sweep_data
 reproduce_original_data/second_parameter_sweep_data
 
+reproduce_original_data/first_parameter_sweep_data_NOXXY
+reproduce_original_data/second_parameter_sweep_data_NOXXY
+
+
 
 dump/
