@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-composite_replotting.py
+composite_plotting.py
 
 This script orchestrates the plotting pipelines for all the figures shown in the publication, using
 the original data cached errors within the folder in this directory.
