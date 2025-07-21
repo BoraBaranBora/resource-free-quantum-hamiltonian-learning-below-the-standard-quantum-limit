@@ -438,7 +438,6 @@ def plot_each_family_separately(
     show_theory: bool = True
 ):
     for family in families:
-        print(f"\nPlotting for family: {family}")
         plot_errors_for_outer(
             errors_by_scaling=errors_by_scaling,
             scaling_param=scaling_param,

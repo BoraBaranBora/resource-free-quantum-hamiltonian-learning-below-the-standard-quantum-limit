@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # Sweeping alpha
     # Sweep 2 (returns (alphas_time, betas_time))
     # Figure 2a)
-    time_res = run_sweep2_pipeline(sweep2_path, cache_dir)
+    time_res = run_sweep1_pipeline(sweep2_path, cache_dir)
 
     # Illustrative Example Figure 2
     # 2b) (Single Run from Sweep 2)
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     
     # Fisher Information Matrix Diagonalization (Sweeping Spreading Ensemble ISze)
     # Figure 1 a) & b) (purely from Sweep 1 Data)
-    run_sweep1_pipeline(sweep1_path, cache_dir)
+    run_sweep2_pipeline(sweep1_path, cache_dir)
 
 
     
