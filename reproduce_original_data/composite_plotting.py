@@ -36,17 +36,17 @@ if __name__ == "__main__":
     cache_dir   = os.path.join(THIS_DIR, "cached_errors")
 
     # Sweeping alpha
-    # Sweep 2 (returns (alphas_time, betas_time))
-    # Figure 2a)
-    time_res = run_sweep1_pipeline(sweep2_path, cache_dir)
+    # Sweep 1 (returns (alphas_time, betas_time))
+    # Figure 1
+    time_res = run_sweep1_pipeline(sweep1_path, cache_dir)
 
     # Illustrative Example Figure 2
-    # 2b) (Single Run from Sweep 2)
-    run_sweep1_outer(sweep2_path, cache_dir)
+    # 2) (Single Run from Sweep 2)
+    run_sweep1_outer(sweep1_path, cache_dir)
     
     # Fisher Information Matrix Diagonalization (Sweeping Spreading Ensemble ISze)
-    # Figure 1 a) & b) (purely from Sweep 1 Data)
-    run_sweep2_pipeline(sweep1_path, cache_dir)
+    # Figure 1 a) & b) (purely from Sweep 2 Data)
+    run_sweep2_pipeline(sweep2_path, cache_dir)
 
 
     

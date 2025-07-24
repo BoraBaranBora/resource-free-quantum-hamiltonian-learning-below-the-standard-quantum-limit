@@ -450,106 +450,6 @@ def plot_each_family_separately(
 
 
 
-def plot_betas_vs_alpha_per_family(
-    results: dict,
-    scaling_param: str = "times",
-    show_regression: bool = True,
-    exclude_alphas: list = []
-):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib.lines as mlines
-    from scipy.optimize import curve_fit
-
-    def beta_model(alpha, gamma0, B):
-        return 0.5 * (alpha * gamma0 + 1) / (alpha + 1) + B
-
-    inner_label = "Total Exp. Time" if scaling_param == "times" else "State-Spreadings"
-    exclude_alphas = set(exclude_alphas or [])
-
-    all_a = np.hstack([res[0] for res in results.values()])
-    fine = np.linspace(np.nanmin(all_a), np.nanmax(all_a), 300)
-    beta_theory_fine = beta_model(fine, gamma0=1.0, B=0.0)
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    legend_handles = []
-    legend_labels = []
-
-    for fam, (alphas, betas, errs) in results.items():
-        mask = ~np.isnan(betas)
-        a = alphas[mask]
-        b = betas[mask]
-        e = errs[mask]
-
-        if exclude_alphas:
-            include_mask = ~np.isin(a, list(exclude_alphas))
-            a, b, e = a[include_mask], b[include_mask], e[include_mask]
-
-        if a.size == 0:
-            continue
-
-        color = FAMILY_COLORS.get(fam, "black")
-        marker = FAMILY_MARKERS.get(fam, "o")
-
-        label = fam
-        if show_regression:
-            try:
-                popt, pcov = curve_fit(
-                    beta_model,
-                    a, b,
-                    #sigma=e,
-                    #absolute_sigma=True,
-                    p0=[1.0, 0.0],  # initial guess: gamma_0 = 1, B = 0
-                    bounds=([-5.0, -2.0], [5.0, 2.0])
-                )
-                gamma0_fit, B_fit = popt
-                gamma0_err, B_err = np.sqrt(np.diag(pcov))
-
-                label = (
-                    fr"{fam} & fit: "
-                    fr"$\gamma_0 = {gamma0_fit:.2f} \pm {gamma0_err:.2f},\; "
-                    fr"B = {B_fit:.2f} \pm {B_err:.2f}$"
-                )
-
-                alpha_grid = np.linspace(a.min(), a.max(), 300)
-                fit_curve = beta_model(alpha_grid, *popt)
-                ax.plot(
-                    alpha_grid, fit_curve,
-                    '-', linewidth=2, color=color, alpha=0.8, label=None
-                )
-            except Exception as err:
-                print(f"[WARN] Fit failed for {fam}: {err}")
-                label = f"{fam} (fit failed)"
-
-        eb = ax.errorbar(
-            a, b, yerr=e,
-            fmt=marker,
-            linestyle='None',
-            markersize=8,
-            markeredgecolor='k',
-            markerfacecolor=color,
-            ecolor=color,
-            elinewidth=1.5,
-            capsize=4,
-            alpha=0.8,
-            label=label
-        )
-
-        legend_handles.append(eb)
-        legend_labels.append(label)
-
-    ax.set_xlabel(r"$\alpha$", fontsize=20)
-    ax.set_ylabel(r"$\beta_{\mathrm{T}_{\mathrm{tot}}}$", fontsize=20)
-    ax.set_title(f"{inner_label} Error‐Scaling Exponent vs. $\\alpha$", fontsize=20)
-    ax.tick_params(labelsize=18)
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
-    ax.legend(handles=legend_handles, labels=legend_labels, fontsize=13, loc='best')
-
-    plt.tight_layout()
-    plt.show()
-    return fig, ax
-
 
 
 
@@ -624,6 +524,10 @@ def plot_betas_vs_alpha_per_family(
         '--', linewidth=2.5, color='gray', alpha=0.8,
         label=fr"Prediction, shifted"
     )
+    # Plot horizontal reference lines
+    sql_line = ax.axhline(
+        y=0.5, color='black', linestyle=':', linewidth=1.5, alpha=0.8, label='SQL'
+    )
 
     # Legend for data families
     data_legend = ax.legend(
@@ -636,11 +540,19 @@ def plot_betas_vs_alpha_per_family(
     ax.add_artist(data_legend)
 
     # Separate legend for theory lines
+    #ax.legend(
+    #    handles=[theory_main, theory_shifted_line],
+    #    loc='lower right',
+    #    fontsize=15,
+    #    title='Theoretical curves'
+    #)
+    
+    # Separate legend for theory lines + horizontal limits
     ax.legend(
-        handles=[theory_main, theory_shifted_line],
+        handles=[theory_main, theory_shifted_line, sql_line],
         loc='lower right',
         fontsize=15,
-        title='Theoretical curves'
+        title=None
     )
 
     ax.set_xlabel(r"$\alpha$", fontsize=20)

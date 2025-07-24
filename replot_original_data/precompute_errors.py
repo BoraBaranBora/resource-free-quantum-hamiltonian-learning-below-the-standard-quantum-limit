@@ -141,18 +141,18 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # 2) Sweep 2: time‐scaling grouped by alpha
-    base2 = os.path.join(script_dir, "first_parameter_sweep_data")
+    base1 = os.path.join(script_dir, "first_parameter_sweep_data")
     precompute_for_base(
-        base_path=base2,
+        base_path=base1,
         scaling_param="times",
         group_by="alpha",
         out_fname="sweep1_errors.pkl"
     )
     
         # 1) Sweep 1: time‐scaling grouped by spreadingation
-    base1 = os.path.join(script_dir, "second_parameter_sweep_data")
+    base2 = os.path.join(script_dir, "second_parameter_sweep_data")
     precompute_for_base(
-        base_path=base1,
+        base_path=base2,
         scaling_param="times",
         group_by="spreading",
         out_fname="sweep2_errors.pkl"

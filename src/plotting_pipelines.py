@@ -111,7 +111,7 @@ def run_sweep1_pipeline(base_time: str, cache_dir: str):
     to point to first_parameter_sweep_data/.  It will look for
       {cache_dir}/sweep1_errors.pkl first.
     """
-    print("\n=== Running Sweep 2 Pipeline ===")
+    print("\n=== Running Sweep 1 Pipeline ===")
     os.makedirs(cache_dir, exist_ok=True)
     cache_path = os.path.join(cache_dir, "sweep1_errors.pkl")
 
