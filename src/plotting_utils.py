@@ -161,7 +161,7 @@ def plot_errors_by_spreadings(
 
     # (unchanged) finalize
     plt.xlabel("Total Experiment Time ", fontsize=20)
-    plt.ylabel("Error ", fontsize=20)
+    plt.ylabel(r"Error $\varepsilon$ ", fontsize=20)
     if label_prefix == "α":
         plt.title("Error vs Total Experiment Time (grouped by α)", fontsize=20)
     else:
@@ -258,7 +258,7 @@ def plot_beta_trends_per_family(
         plt.xlabel("State Spreadings", fontsize=20)
         plt.title(r"Error‐Scaling β vs. Number of Spreadings ($\alpha$ =1.0)", fontsize=20)
 
-    plt.ylabel("Error‐Scaling β", fontsize=20)
+    plt.ylabel(r"$\beta_{\mathrm{T}_{\mathrm{tot}}}$", fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
 
@@ -393,9 +393,9 @@ def plot_errors_for_outer(
 
         if show_theory and not theory_plotted:
             y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
-            plt.plot(x_fit, y_sql, '-', label="SQL ∝ x⁰․⁵", linewidth=2, alpha=0.7)
+            plt.plot(x_fit, y_sql, '-', label=r"SQL $\propto T_{\mathrm{tot}}^{-0.5}$", linewidth=2, alpha=0.7)
             y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
-            plt.plot(x_fit, y_heis, '-', label="Heisenberg ∝ x¹", color='blue', linewidth=2, alpha=0.7)
+            plt.plot(x_fit, y_heis, '-', label = r"Heisenberg $\propto T_{\mathrm{tot}}^{-1}$", color='blue', linewidth=2, alpha=0.7)
             theory_plotted = True
 
         def round_sig(val, err):
@@ -410,13 +410,14 @@ def plot_errors_for_outer(
         plt.plot(
             x_fit, y_fit, linestyle='--',
             color=FAMILY_COLORS.get(display_family, 'black'),
-            label=f"{display_family} fit: y=({a_r}±{a_err_r})·x^({b_r}±{b_err_r})",
+            #label=rf"{display_family} fit: y=({a_r}±{a_err_r})·$T_{tot}$^-({b_r}±{b_err_r})",
+            label = rf"{display_family} fit: $y = ({a_r} \pm {a_err_r}) \cdot T_{{tot}}$^-({b_r}±{b_err_r})",
             linewidth=2, alpha=0.8
         )
 
     plt.xlabel(f"{inner_label} ", fontsize=20)
-    plt.ylabel("Error ", fontsize=20)
-    title = f"Error vs {inner_label} ({outer_label}={outer_value})"
+    plt.ylabel(r"Error $\varepsilon$ ", fontsize=20)
+    title = rf"Error $\varepsilon$ vs {inner_label} ({outer_label}={outer_value})"
     if include_families and len(include_families) == 1:
         title += f" - {display_family}"
     plt.title(title, fontsize=20)
