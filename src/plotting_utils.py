@@ -393,9 +393,9 @@ def plot_errors_for_outer(
 
         if show_theory and not theory_plotted:
             y_sql = y_fit[0] * (x_fit / x_fit[0])**(-0.5)
-            plt.plot(x_fit, y_sql, '-', label=r"SQL $\propto T_{\mathrm{tot}}^{-0.5}$", linewidth=2, alpha=0.7)
+            plt.plot(x_fit, y_sql, '-', label=r"SQL $\propto {T_{\mathrm{tot}}}^{-0.5}$", linewidth=2, alpha=0.7)
             y_heis = y_fit[0] * (x_fit / x_fit[0])**(-1.0)
-            plt.plot(x_fit, y_heis, '-', label = r"Heisenberg $\propto T_{\mathrm{tot}}^{-1}$", color='blue', linewidth=2, alpha=0.7)
+            plt.plot(x_fit, y_heis, '-', label = r"Heisenberg $\propto {T_{\mathrm{tot}}}^{-1}$", color='blue', linewidth=2, alpha=0.7)
             theory_plotted = True
 
         def round_sig(val, err):
@@ -411,7 +411,7 @@ def plot_errors_for_outer(
             x_fit, y_fit, linestyle='--',
             color=FAMILY_COLORS.get(display_family, 'black'),
             #label=rf"{display_family} fit: y=({a_r}±{a_err_r})·$T_{tot}$^-({b_r}±{b_err_r})",
-            label = rf"{display_family} fit: $y = ({a_r} \pm {a_err_r}) \cdot T_{{tot}}$^-({b_r}±{b_err_r})",
+            label = rf"{display_family} fit: $\varepsilon = ({a_r} \pm {a_err_r}) \cdot T_{{tot}}$^-({b_r}±{b_err_r})",
             linewidth=2, alpha=0.8
         )
 
