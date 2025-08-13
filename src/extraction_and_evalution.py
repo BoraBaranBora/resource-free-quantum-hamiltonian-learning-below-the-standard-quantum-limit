@@ -286,9 +286,9 @@ def compute_betas_from_errors(
                 continue
 
             # Simple percentile filtering (optional)
-            q0 = scoreatpercentile(fy, 0)
-            q50 = scoreatpercentile(fy, 100)
-            filt_mask = (fy >= q0) & (fy <= q50)
+            q_lower = scoreatpercentile(fy, 0)
+            q_upper = scoreatpercentile(fy, 100)
+            filt_mask = (fy >= q_lower) & (fy <= q_upper)
             fx, fy = fx[filt_mask], fy[filt_mask]
 
             idx = np.argsort(fx)

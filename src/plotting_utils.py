@@ -67,7 +67,7 @@ def plot_errors_by_spreadings(
 
     # === end new ===
 
-    plt.figure(figsize=(8, 7))
+    plt.figure(figsize=(8, 7))#, dpi=300)
     plt.xscale('log')
     plt.yscale('log')
 
@@ -112,15 +112,12 @@ def plot_errors_by_spreadings(
             )
 
             # (2) build fit_data
-            if ssum==0.01:
-                pref = [e for e in rez if e < 20.0]
-            else:
-                pref = [e for e in rez if e < 20.0]
+            pref = [e for e in rez if e < 20.0]
             if len(pref) < 1:
                 continue
-            q0 = scoreatpercentile(pref, 0)
-            q50 = scoreatpercentile(pref, 100)
-            filt = [e for e in pref if q0 <= e <= q50]
+            q_lower = scoreatpercentile(pref, 0)
+            q_upper = scoreatpercentile(pref, 100)
+            filt = [e for e in pref if q_lower <= e <= q_upper]
 
 
             fit_data.setdefault(key, {"x": [], "y": []})
@@ -172,6 +169,7 @@ def plot_errors_by_spreadings(
     plt.grid(True, which='minor', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
     plt.legend(fontsize=15)
     plt.tight_layout()
+    #plt.savefig(f"Figure_1_{include_families[0]}_1shot.png")
     plt.show()
 
 
@@ -189,7 +187,7 @@ def plot_beta_trends_per_family(
     label_prefix : str
         If "α", axis/title will label α; otherwise it's “State Spreadings”.
     """
-    plt.figure(figsize=(8, 7))
+    plt.figure(figsize=(8, 7))#, dpi=300)
 
     # (0) For each family, scatter+trend
     for orig_fam, (keys, betas, beta_errs) in results.items():
@@ -266,6 +264,7 @@ def plot_beta_trends_per_family(
     plt.legend(fontsize=15, loc='best')
     plt.tight_layout()
     plt.show()
+    #plt.savefig("Figure_ErrorScaling_vs_Spreadings_Families_1shot.png")
 
 
 def plot_errors_for_outer(
@@ -312,7 +311,7 @@ def plot_errors_for_outer(
         inner_groups.setdefault(inner_tuple, []).append((family, rel_err))
 
     # Prepare figure
-    plt.figure(figsize=(8, 7))
+    plt.figure(figsize=(8, 7))#, dpi=300)
     plt.xscale("log")
     plt.yscale("log")
 
@@ -337,8 +336,8 @@ def plot_errors_for_outer(
             if len(pref) < 1:
                 continue
 
-            q0, q50 = scoreatpercentile(pref, 0), scoreatpercentile(pref, 50)
-            filt = [e for e in pref if q0 <= e <= q50]
+            q_lower, q_upper = scoreatpercentile(pref, 0), scoreatpercentile(pref, 50)
+            filt = [e for e in pref if q_lower <= e <= q_upper]
             if len(filt) < 1:
                 continue
 
@@ -427,6 +426,8 @@ def plot_errors_for_outer(
     plt.legend(fontsize=15, loc='best')
     plt.tight_layout()
     plt.show()
+    #plt.savefig(f"Figure_TotalExpTime_Scaling_alpha1p0_{display_family}_1shot.png")
+
 
 
 def plot_each_family_separately(
@@ -475,7 +476,7 @@ def plot_betas_vs_alpha_per_family(
     theory_vals = beta_theory(fine, gamma0=gamma0_theory)
     theory_shifted = theory_vals + finite_mt_offset
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(8, 6))#, dpi=300)
     data_handles = []
     data_labels = []
 
@@ -564,4 +565,5 @@ def plot_betas_vs_alpha_per_family(
 
     plt.tight_layout()
     plt.show()
+    #plt.savefig("Figure_scaling_with_alpha_families_1shot_alternative.png")
     return fig, ax
